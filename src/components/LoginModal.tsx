@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { StorageService } from '../services/storage';
-import { Lock, ShieldCheck, UserCheck, ShieldAlert, X, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Lock, ShieldAlert, X, Eye, EyeOff, KeyRound } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -51,28 +51,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     onClose();
   };
 
-  const handleQuickRoleLogin = (role: 'admin' | 'officer1' | 'officer2') => {
-    const allUsers = StorageService.getUsers();
-    let targetUsername = 'admin';
-    if (role === 'officer1') targetUsername = 'officer_spao1';
-    if (role === 'officer2') targetUsername = 'officer_vec';
-
-    const found = allUsers.find(u => u.username === targetUsername) || allUsers[0];
-
-    StorageService.addAuditLog({
-      userId: found.id,
-      userName: found.name,
-      userRole: found.role,
-      agencyName: found.agencyName,
-      action: 'LOGIN',
-      details: `เข้าสู่ระบบด่วน (Quick Demo Login) ในบทบาท ${found.role.toUpperCase()}`,
-      ipAddress: '127.0.0.1'
-    });
-
-    onLoginSuccess(found);
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100">
@@ -99,56 +77,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         {/* Content Body */}
         <div className="p-6 space-y-6">
-          {/* Quick Demo Login Preset Buttons */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              ⚡ เลือกเข้าสู่ระบบด่วนเพื่อทดสอบสิทธิ์ (Quick Demo Access)
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleQuickRoleLogin('admin')}
-                className="p-3 text-left rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100/80 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-rose-900">1. Admin (ผู้ดูแลระบบ)</span>
-                  <ShieldCheck className="w-4 h-4 text-rose-600" />
-                </div>
-                <p className="text-[11px] text-rose-700 mt-1">สิทธิ์สูงสุด: แก้ไข/ลบ ได้ทุกโครงการ, จัดการผู้ใช้, Master Lists, Audit Log</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRoleLogin('officer1')}
-                className="p-3 text-left rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-100/80 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-sky-900">2. User (สพป.1)</span>
-                  <UserCheck className="w-4 h-4 text-sky-600" />
-                </div>
-                <p className="text-[11px] text-sky-700 mt-1">เพิ่มโครงการ, แก้ไข/ลบโครงการตนเอง, ส่งออก Excel/CSV/PDF</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRoleLogin('officer2')}
-                className="p-3 text-left rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/80 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-900">3. User (อาชีวศึกษา)</span>
-                  <UserCheck className="w-4 h-4 text-amber-600" />
-                </div>
-                <p className="text-[11px] text-amber-800 mt-1">ทดสอบจัดการโครงการต่างหน่วยงาน (เพื่อทดสอบ RBAC)</p>
-              </button>
-            </div>
-          </div>
-
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-slate-200"></div>
-            <span className="flex-shrink mx-4 text-xs font-semibold text-slate-400">หรือ กรอกชื่อผู้ใช้และรหัสผ่าน</span>
-            <div className="flex-grow border-t border-slate-200"></div>
-          </div>
-
           {/* Form */}
           <form onSubmit={handleCustomLogin} className="space-y-4">
             {errorMsg && (

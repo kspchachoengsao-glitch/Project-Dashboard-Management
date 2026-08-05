@@ -176,6 +176,8 @@ const DEMO_PDF_FILE = {
   name: 'เอกสารอนุมัติและแผนดำเนินงานโครงการ_2568.pdf',
   dataUrl: 'data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDAKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPj4KZW5kb2JqCjMgMCBvYmoKPDAKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNSAwIFIKPj4KPj4KPj4KZW5kb2JqCjQgMCBvYmoKPDAKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQKL0YxIDI0IFRmCjEwMCA3MDAgVGQKKENoYWNob2VuZ3NhbyBFZHVjYXRpb24gUHJvamVjdCBQREYpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PAovVHlwZSAvRm9udAovU3VidHlwZSAvVHlwZTEKL0Jhc2VGb250IC9IZWx2ZXRpY2EKPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAxMDAwMDAwOSAwMDAwMCBuIAowMDEwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0NCAwMDAwMCBuIAowMDAwMDAwMzM5IDAwMDAwIG4gCnRyYWlsZXIKPDAKL1NpemUgNgovUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDE1CiUlRU9GCg==',
   size: 1450000,
+  cacheControl: 'public, max-age=31536000',
+  uploadedAt: new Date().toISOString(),
 };
 
 const DEMO_PHOTOS = [
@@ -188,6 +190,8 @@ const DEMO_PHOTOS = [
     thumbnailSize: 21000,
     width: 1280,
     height: 960,
+    cacheControl: 'public, max-age=31536000',
+    uploadedAt: new Date().toISOString(),
   },
   {
     id: 'photo-demo-2',
@@ -198,6 +202,8 @@ const DEMO_PHOTOS = [
     thumbnailSize: 22500,
     width: 1280,
     height: 960,
+    cacheControl: 'public, max-age=31536000',
+    uploadedAt: new Date().toISOString(),
   }
 ];
 
