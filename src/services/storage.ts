@@ -7,6 +7,7 @@ import {
   INITIAL_PROJECTS,
   INITIAL_AUDIT_LOGS
 } from '../data/initialData';
+import { db, doc, setDoc, getDocs, collection, onSnapshot } from '../lib/firebase';
 
 const KEYS = {
   AGENCIES: 'system_agencies_v1',
@@ -37,12 +38,63 @@ function setItem<T>(key: string, value: T): void {
   }
 }
 
+// Sync helper to Firestore
+async function syncCollectionToFirestore(colName: string, items: any[]): Promise<void> {
+  try {
+    const docRef = doc(db, 'app_data', colName);
+    await setDoc(docRef, { items, updatedAt: new Date().toISOString() });
+  } catch (err) {
+    console.warn(`Firestore sync warning for ${colName}:`, err);
+  }
+}
+
+// Initialize Firestore Real-time Listeners
+let isFirestoreInitialized = false;
+
+export function initFirestoreListeners(onDataUpdated?: () => void) {
+  if (isFirestoreInitialized) return;
+  isFirestoreInitialized = true;
+
+  const collections = [
+    { key: KEYS.AGENCIES, col: 'agencies', fallback: INITIAL_AGENCIES },
+    { key: KEYS.STRATEGIC_ISSUES, col: 'strategicIssues', fallback: INITIAL_STRATEGIC_ISSUES },
+    { key: KEYS.KEY_PROJECTS, col: 'keyProjects', fallback: INITIAL_KEY_FLAGSHIP_PROJECTS },
+    { key: KEYS.USERS, col: 'users', fallback: INITIAL_USERS },
+    { key: KEYS.PROJECTS, col: 'projects', fallback: INITIAL_PROJECTS },
+    { key: KEYS.AUDIT_LOGS, col: 'auditLogs', fallback: INITIAL_AUDIT_LOGS },
+  ];
+
+  collections.forEach(({ key, col, fallback }) => {
+    try {
+      const docRef = doc(db, 'app_data', col);
+      onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data?.items)) {
+            setItem(key, data.items);
+            if (onDataUpdated) onDataUpdated();
+          }
+        } else {
+          // Seed initial data to Firestore if empty
+          const currentLocal = getItem(key, fallback);
+          syncCollectionToFirestore(col, currentLocal);
+        }
+      }, (err) => {
+        console.warn(`Firestore snapshot listener error for ${col}:`, err);
+      });
+    } catch (err) {
+      console.warn(`Failed to attach snapshot listener for ${col}:`, err);
+    }
+  });
+}
+
 export const StorageService = {
   getAgencies(): Agency[] {
     return getItem<Agency[]>(KEYS.AGENCIES, INITIAL_AGENCIES);
   },
   saveAgencies(agencies: Agency[]): void {
     setItem(KEYS.AGENCIES, agencies);
+    syncCollectionToFirestore('agencies', agencies);
   },
 
   getStrategicIssues(): StrategicIssue[] {
@@ -50,6 +102,7 @@ export const StorageService = {
   },
   saveStrategicIssues(issues: StrategicIssue[]): void {
     setItem(KEYS.STRATEGIC_ISSUES, issues);
+    syncCollectionToFirestore('strategicIssues', issues);
   },
 
   getKeyProjects(): KeyFlagshipProject[] {
@@ -57,6 +110,7 @@ export const StorageService = {
   },
   saveKeyProjects(keyProjects: KeyFlagshipProject[]): void {
     setItem(KEYS.KEY_PROJECTS, keyProjects);
+    syncCollectionToFirestore('keyProjects', keyProjects);
   },
 
   getUsers(): User[] {
@@ -64,6 +118,7 @@ export const StorageService = {
   },
   saveUsers(users: User[]): void {
     setItem(KEYS.USERS, users);
+    syncCollectionToFirestore('users', users);
   },
 
   getProjects(): Project[] {
@@ -71,6 +126,7 @@ export const StorageService = {
   },
   saveProjects(projects: Project[]): void {
     setItem(KEYS.PROJECTS, projects);
+    syncCollectionToFirestore('projects', projects);
   },
 
   getAuditLogs(): AuditLogEntry[] {
@@ -85,6 +141,7 @@ export const StorageService = {
     };
     const updated = [newLog, ...logs];
     setItem(KEYS.AUDIT_LOGS, updated);
+    syncCollectionToFirestore('auditLogs', updated);
     return newLog;
   },
 
@@ -103,5 +160,13 @@ export const StorageService = {
     setItem(KEYS.PROJECTS, INITIAL_PROJECTS);
     setItem(KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
     setItem(KEYS.CURRENT_USER, null);
+
+    syncCollectionToFirestore('agencies', INITIAL_AGENCIES);
+    syncCollectionToFirestore('strategicIssues', INITIAL_STRATEGIC_ISSUES);
+    syncCollectionToFirestore('keyProjects', INITIAL_KEY_FLAGSHIP_PROJECTS);
+    syncCollectionToFirestore('users', INITIAL_USERS);
+    syncCollectionToFirestore('projects', INITIAL_PROJECTS);
+    syncCollectionToFirestore('auditLogs', INITIAL_AUDIT_LOGS);
   }
 };
+

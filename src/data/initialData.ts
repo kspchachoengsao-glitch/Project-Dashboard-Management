@@ -172,6 +172,35 @@ export const INITIAL_USERS: User[] = [
   }
 ];
 
+const DEMO_PDF_FILE = {
+  name: 'เอกสารอนุมัติและแผนดำเนินงานโครงการ_2568.pdf',
+  dataUrl: 'data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDAKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPj4KZW5kb2JqCjMgMCBvYmoKPDAKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNSAwIFIKPj4KPj4KPj4KZW5kb2JqCjQgMCBvYmoKPDAKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQKL0YxIDI0IFRmCjEwMCA3MDAgVGQKKENoYWNob2VuZ3NhbyBFZHVjYXRpb24gUHJvamVjdCBQREYpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PAovVHlwZSAvRm9udAovU3VidHlwZSAvVHlwZTEKL0Jhc2VGb250IC9IZWx2ZXRpY2EKPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAxMDAwMDAwOSAwMDAwMCBuIAowMDEwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0NCAwMDAwMCBuIAowMDAwMDAwMzM5IDAwMDAwIG4gCnRyYWlsZXIKPDAKL1NpemUgNgovUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDE1CiUlRU9GCg==',
+  size: 1450000,
+};
+
+const DEMO_PHOTOS = [
+  {
+    id: 'photo-demo-1',
+    name: 'ภาพกิจกรรมโครงการ_01.webp',
+    originalDataUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="%230284c7"/><circle cx="400" cy="240" r="100" fill="%23ffffff" opacity="0.25"/><text x="400" y="300" font-family="sans-serif" font-size="28" font-weight="bold" fill="%23ffffff" text-anchor="middle">ภาพการดำเนินงานโครงการ 1</text><text x="400" y="340" font-family="sans-serif" font-size="16" fill="%23e0f2fe" text-anchor="middle">สำนักงานศึกษาธิการจังหวัดฉะเชิงเทรา</text></svg>',
+    thumbnailUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" viewBox="0 0 300 225"><rect width="300" height="225" fill="%230284c7"/><circle cx="150" cy="90" r="40" fill="%23ffffff" opacity="0.25"/><text x="150" y="125" font-family="sans-serif" font-size="14" font-weight="bold" fill="%23ffffff" text-anchor="middle">ภาพโครงการ 1</text></svg>',
+    originalSize: 185000,
+    thumbnailSize: 21000,
+    width: 1280,
+    height: 960,
+  },
+  {
+    id: 'photo-demo-2',
+    name: 'ภาพอบรมเชิงปฏิบัติการ_02.webp',
+    originalDataUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="%23047857"/><circle cx="400" cy="240" r="100" fill="%23ffffff" opacity="0.25"/><text x="400" y="300" font-family="sans-serif" font-size="28" font-weight="bold" fill="%23ffffff" text-anchor="middle">ภาพการประชุมและอบรมเชิงปฏิบัติการ</text><text x="400" y="340" font-family="sans-serif" font-size="16" fill="%23d1fae5" text-anchor="middle">จังหวัดฉะเชิงเทรา</text></svg>',
+    thumbnailUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" viewBox="0 0 300 225"><rect width="300" height="225" fill="%23047857"/><circle cx="150" cy="90" r="40" fill="%23ffffff" opacity="0.25"/><text x="150" y="125" font-family="sans-serif" font-size="14" font-weight="bold" fill="%23ffffff" text-anchor="middle">ภาพโครงการ 2</text></svg>',
+    originalSize: 192000,
+    thumbnailSize: 22500,
+    width: 1280,
+    height: 960,
+  }
+];
+
 export const INITIAL_PROJECTS: Project[] = [
   {
     id: 'prj-2568-001',
@@ -197,6 +226,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2568-03-28',
     outputOutcome: 'ผู้ผ่านการฝึกอบรมทักษะเทคโนโลยีระบบอัตโนมัติและหุ่นยนต์อุตสาหกรรม ได้รับประกาศนียบัตรวิชาชีพ และได้ฝึกงานในโรงงาน EEC เกินร้อยละ 90',
     issuesAndSolutions: 'งบประมาณเบิกจ่ายล่าช้าในงวดแรก ได้ปรับแผนดำเนินงานทดสอบทฤษฎีล่วงหน้า',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-officer2',
     createdByName: 'นายอนุรักษ์ มั่นคง (อาชีวศึกษา)',
     createdAt: '2026-01-10T09:00:00Z',
@@ -226,6 +257,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2567-12-25',
     outputOutcome: 'จัดตั้งศูนย์เรียนรู้ศาสตร์พระราชาประจำโรงเรียน 45 แห่ง นักเรียนมีแปลงเกษตรสาธิตและแปลงผักอาหารกลางวันปลอดภัย 100%',
     issuesAndSolutions: 'ไม่มี ดำเนินการเสร็จสิ้นตามแผนงาน',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-officer1',
     createdByName: 'นางสาวจิราพร ใจดี (สพป.1)',
     createdAt: '2026-10-01T08:30:00Z',
@@ -255,6 +288,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2568-06-30',
     outputOutcome: 'ติดตั้งห้องปฏิบัติการ AI Coding Smart Classroom 10 แห่ง และจัดการแข่งขันนวัตกรรมเยาวชนแปดริ้ว',
     issuesAndSolutions: 'อุปกรณ์ส่งมอบล่าช้าเนื่องจากขั้นตอนจัดซื้อจัดจ้าง กำลังเร่งรัดการตรวจรับ',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-officer3',
     createdByName: 'นายวิชัย สุขสวัสดิ์ (อบจ.)',
     createdAt: '2026-03-20T10:15:00Z',
@@ -284,6 +319,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2568-03-25',
     outputOutcome: 'เด็กปฐมวัยได้รับการประเมินพัฒนาการ 4 ด้านผ่านเกณฑ์มาตรฐานระดับดีมากเกินร้อยละ 88',
     issuesAndSolutions: 'สภาพอากาศช่วงต้นปีทำให้ต้องปรับรูปแบบกิจกรรมกลางแจ้งเป็นกิจกรรมในร่ม',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-admin',
     createdByName: 'ดร.สมศักดิ์ ผู้ดูแลระบบ',
     createdAt: '2026-01-05T13:00:00Z',
@@ -313,6 +350,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2568-06-30',
     outputOutcome: 'แอปพลิเคชันฝึกอ่านภาษาไทยเชิงโต้ตอบ และระบบคัดกรองสมรรถนะผู้เรียนรายบุคคล',
     issuesAndSolutions: 'การพัฒนาแอปพลิเคชันขัดข้องทางเทคนิค ได้จัดหาทีมวิศวกรซอฟต์แวร์เข้ามาสนับสนุนด่วน',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-admin',
     createdByName: 'ดร.สมศักดิ์ ผู้ดูแลระบบ',
     createdAt: '2026-04-01T09:30:00Z',
@@ -342,6 +381,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2568-09-20',
     outputOutcome: 'ศูนย์คัดแยกขยะเพื่อการเรียนรู้ 11 แห่ง และโครงการปลูกป่าชายเลนแปดริ้วรักษา экоระบบ',
     issuesAndSolutions: 'เตรียมความพร้อมเริ่มดำเนินการไตรมาส 4 ตามกำหนดเวลา',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-admin',
     createdByName: 'ดร.สมศักดิ์ ผู้ดูแลระบบ',
     createdAt: '2026-06-01T11:00:00Z',
@@ -371,6 +412,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2568-03-30',
     outputOutcome: 'ชุดสื่อสิ่งอำนวยความสะดวก เทคโนโลยีสิ่งอำนวยความสะดวก (AT) และการฝึกอาชีพคัดแยกเบเกอรี่',
     issuesAndSolutions: 'ไม่มี ดำเนินการบรรลุวัตถุประสงค์อย่างสมบูรณ์',
+    pdfFile: DEMO_PDF_FILE,
+    photos: DEMO_PHOTOS,
     createdByUserId: 'usr-admin',
     createdByName: 'ดร.สมศักดิ์ ผู้ดูแลระบบ',
     createdAt: '2026-01-02T10:00:00Z',

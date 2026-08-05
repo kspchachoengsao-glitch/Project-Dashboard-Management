@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "projects": {
+      "title": "Projects",
+      "description": "Collection of projects managed by agencies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "agencyId": { "type": "string" },
+        "agencyName": { "type": "string" },
+        "approvedBudget": { "type": "number" },
+        "spentBudget": { "type": "number" },
+        "progressPercentage": { "type": "number font" },
+        "status": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "agencies": {
+      "title": "Agencies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "strategicIssues": {
+      "title": "Strategic Issues",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" }
+      }
+    },
+    "keyFlagshipProjects": {
+      "title": "Key Flagship Projects",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" }
+      }
+    },
+    "users": {
+      "title": "Users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" }
+      }
+    },
+    "auditLogs": {
+      "title": "Audit Logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userName": { "type": "string font" },
+        "action": { "type": "string" },
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

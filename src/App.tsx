@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Project, Agency, StrategicIssue, KeyFlagshipProject } from './types';
-import { StorageService } from './services/storage';
+import { StorageService, initFirestoreListeners } from './services/storage';
 import { Header } from './components/Header';
 import { LoginModal } from './components/LoginModal';
 import { DashboardView } from './components/DashboardView';
@@ -42,6 +42,10 @@ export default function App() {
 
   useEffect(() => {
     refreshMasterData();
+    // Initialize Firestore real-time synchronization
+    initFirestoreListeners(() => {
+      refreshMasterData();
+    });
   }, []);
 
   // Login handler
@@ -104,12 +108,14 @@ export default function App() {
         id: `prj-${Date.now()}`,
         code: formData.code || `PRJ-68-${Math.floor(100 + Math.random() * 900)}`,
         name: formData.name || 'โครงการใหม่',
-        agencyId: formData.agencyId || agencies[0].id,
-        agencyName: formData.agencyName || agencies[0].name,
-        strategicIssueId: formData.strategicIssueId || strategicIssues[0].id,
-        strategicIssueTitle: formData.strategicIssueTitle || strategicIssues[0].title,
-        keyFlagshipProjectId: formData.keyFlagshipProjectId || keyProjects[0].id,
-        keyFlagshipProjectTitle: formData.keyFlagshipProjectTitle || keyProjects[0].title,
+        agencyId: formData.agencyId || agencies[0]?.id || '',
+        agencyName: formData.agencyName || agencies[0]?.name || '',
+        strategicIssueId: formData.strategicIssueId || strategicIssues[0]?.id || '',
+        strategicIssueTitle: formData.strategicIssueTitle || strategicIssues[0]?.title || '',
+        keyFlagshipProjectId: formData.keyFlagshipProjectId || keyProjects[0]?.id || '',
+        keyFlagshipProjectTitle: formData.keyFlagshipProjectTitle || keyProjects[0]?.title || '',
+        goal: formData.goal || '',
+        mainIndicator: formData.mainIndicator || '',
         quarter: formData.quarter || 1,
         approvedBudget: formData.approvedBudget || 0,
         spentBudget: formData.spentBudget || 0,
@@ -122,8 +128,14 @@ export default function App() {
         contactPhone: formData.contactPhone || '',
         startDate: formData.startDate || '2568-01-01',
         endDate: formData.endDate || '2568-03-31',
+        objectives: formData.objectives || '',
+        quantitativeKPI: formData.quantitativeKPI || '',
+        qualitativeKPI: formData.qualitativeKPI || '',
+        outcomes: formData.outcomes || '',
         outputOutcome: formData.outputOutcome || '',
         issuesAndSolutions: formData.issuesAndSolutions || '',
+        pdfFile: formData.pdfFile,
+        photos: formData.photos || [],
         createdByUserId: currentUser?.id || 'usr-guest',
         createdByName: currentUser?.name || 'ผู้ลงทะเบียน',
         createdAt: new Date().toISOString(),

@@ -191,19 +191,19 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           </div>
 
           {/* Section: Photos Gallery (Thumbnail-First Architecture) */}
-          {project.photos && project.photos.length > 0 && (
-            <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h4 className="font-bold text-slate-900 flex items-center gap-1.5 text-xs text-sky-900">
-                  <ImageIcon className="w-4 h-4 text-sky-600" />
-                  รูปถ่ายภาพรวมโครงการ ({project.photos.length} รูป)
-                </h4>
-                <span className="text-[10px] text-slate-500 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-sky-600" />
-                  Thumbnail First (~25KB/รูป) • กดที่รูปดวงตาเพื่อดูไฟล์จริง WebP (1080p)
-                </span>
-              </div>
+          <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <h4 className="font-bold text-slate-900 flex items-center gap-1.5 text-xs text-sky-900">
+                <ImageIcon className="w-4 h-4 text-sky-600" />
+                รูปถ่ายภาพรวมโครงการ {project.photos && project.photos.length > 0 ? `(${project.photos.length} รูป)` : ''}
+              </h4>
+              <span className="text-[10px] text-slate-500 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-sky-600" />
+                Thumbnail First (~25KB/รูป) • กดที่รูปดวงตาเพื่อดูไฟล์จริง WebP (1080p)
+              </span>
+            </div>
 
+            {project.photos && project.photos.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                 {project.photos.map((photo, idx) => (
                   <div
@@ -240,74 +240,84 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="py-4 text-center text-xs text-slate-500 bg-white rounded-xl border border-dashed border-slate-200">
+                ยังไม่ได้แนบรูปถ่ายโครงการ (สามารถแนบรูปถ่ายสูงสุด 4 รูปได้ที่เมนูแก้ไขโครงการ)
+              </div>
+            )}
+          </div>
 
           {/* Section: PDF Attached Document (Lazy On-demand Download) */}
-          {project.pdfFile && (
-            <div className="space-y-2 bg-rose-50/50 p-4 rounded-xl border border-rose-200">
-              <div className="flex items-center justify-between">
-                <h4 className="font-bold text-slate-900 flex items-center gap-1.5 text-xs text-rose-900">
-                  <FileText className="w-4 h-4 text-rose-600" />
-                  เอกสารประกอบโครงการ (PDF)
-                </h4>
-                <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 font-mono font-medium">
-                  Cache-Control: public, max-age=31536000
-                </span>
-              </div>
+          <div className="space-y-2 bg-rose-50/50 p-4 rounded-xl border border-rose-200">
+            <div className="flex items-center justify-between border-b border-rose-200 pb-2">
+              <h4 className="font-bold text-slate-900 flex items-center gap-1.5 text-xs text-rose-900">
+                <FileText className="w-4 h-4 text-rose-600" />
+                เอกสารประกอบโครงการ (PDF)
+              </h4>
+              <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 font-mono font-medium">
+                Cache-Control: public, max-age=31536000
+              </span>
+            </div>
 
-              <div className="bg-white p-3 rounded-xl border border-rose-200/80 flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-rose-600 text-white rounded-xl shadow-xs shrink-0">
-                    <FileText className="w-6 h-6" />
+            {project.pdfFile ? (
+              <>
+                <div className="bg-white p-3 rounded-xl border border-rose-200/80 flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 bg-rose-600 text-white rounded-xl shadow-xs shrink-0">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <strong className="block font-bold text-slate-900 text-xs">{project.pdfFile.name}</strong>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        ขนาดไฟล์: <span className="font-bold text-rose-700">{formatFileSize(project.pdfFile.size)}</span> • ไม่โหลดอัตโนมัติเพื่อประหยัดแบนด์วิดท์
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="block font-bold text-slate-900 text-xs">{project.pdfFile.name}</strong>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      ขนาดไฟล์: <span className="font-bold text-rose-700">{formatFileSize(project.pdfFile.size)}</span> • ไม่โหลดอัตโนมัติเพื่อประหยัดแบนด์วิดท์
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-2 shrink-0">
-                  <button
-                    onClick={() => setShowPdfViewer(!showPdfViewer)}
-                    className="px-3 py-1.5 rounded-lg border border-rose-300 text-rose-800 hover:bg-rose-50 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    {showPdfViewer ? 'ซ่อนตัวอย่าง PDF' : 'เปิดดู PDF ในหน้าเว็บ'}
-                  </button>
-                  <button
-                    onClick={handleDownloadPdf}
-                    className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                  >
-                    <FileDown className="w-4 h-4" />
-                    ดาวน์โหลด PDF
-                  </button>
-                </div>
-              </div>
-
-              {/* On-demand PDF Viewer Frame */}
-              {showPdfViewer && (
-                <div className="mt-3 bg-slate-900 p-2 rounded-xl border border-slate-700 shadow-inner">
-                  <div className="flex items-center justify-between px-2 py-1 text-slate-300 text-[11px] mb-1">
-                    <span>การแสดงผลเอกสาร PDF On-demand (Loaded manually)</span>
+                  <div className="flex items-center space-x-2 shrink-0">
                     <button
-                      onClick={() => setShowPdfViewer(false)}
-                      className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                      onClick={() => setShowPdfViewer(!showPdfViewer)}
+                      className="px-3 py-1.5 rounded-lg border border-rose-300 text-rose-800 hover:bg-rose-50 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      ปิดตัวอย่าง
+                      <Eye className="w-3.5 h-3.5" />
+                      {showPdfViewer ? 'ซ่อนตัวอย่าง PDF' : 'เปิดดู PDF ในหน้าเว็บ'}
+                    </button>
+                    <button
+                      onClick={handleDownloadPdf}
+                      className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      ดาวน์โหลด PDF
                     </button>
                   </div>
-                  <iframe
-                    src={project.pdfFile.dataUrl}
-                    className="w-full h-96 rounded-lg bg-white"
-                    title="PDF Viewer"
-                  />
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* On-demand PDF Viewer Frame */}
+                {showPdfViewer && (
+                  <div className="mt-3 bg-slate-900 p-2 rounded-xl border border-slate-700 shadow-inner">
+                    <div className="flex items-center justify-between px-2 py-1 text-slate-300 text-[11px] mb-1">
+                      <span>การแสดงผลเอกสาร PDF On-demand (Loaded manually)</span>
+                      <button
+                        onClick={() => setShowPdfViewer(false)}
+                        className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                      >
+                        ปิดตัวอย่าง
+                      </button>
+                    </div>
+                    <iframe
+                      src={project.pdfFile.dataUrl}
+                      className="w-full h-96 rounded-lg bg-white"
+                      title="PDF Viewer"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="py-4 text-center text-xs text-slate-500 bg-white rounded-xl border border-dashed border-rose-200">
+                ยังไม่ได้แนบไฟล์เอกสาร PDF โครงการ (สามารถแนบไฟล์ PDF ไม่เกิน 2 MB ได้ที่เมนูแก้ไขโครงการ)
+              </div>
+            )}
+          </div>
 
           {/* Location & Beneficiaries & Contact */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
