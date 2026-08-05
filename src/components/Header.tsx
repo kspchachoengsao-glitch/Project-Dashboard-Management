@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-2">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span className="font-medium tracking-wide">
-            ระบบบริหารและติดตามโครงการสำหรับหน่วยงานราชการและทางการศึกษา จังหวัดฉะเชิงเทรา
+            ระบบรายงานผลการดำเนินงานตามแผนพัฒนาการศึกษาจังหวัดฉะเชิงเทรา
           </span>
         </div>
         <div className="hidden sm:flex items-center space-x-4 text-amber-200 text-xs">
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 font-medium flex items-center gap-1.5 mt-0.5">
               <Building2 className="w-3.5 h-3.5 text-amber-700 inline" />
-              กระทรวงศึกษาธิการ • ระบบบริหารติดตามและประเมินผลโครงการ
+              กระทรวงศึกษาธิการ • ระบบบรายงานผลการดำเนินงาน
             </p>
           </div>
         </div>
