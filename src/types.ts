@@ -48,6 +48,27 @@ export interface QuarterInfo {
   monthsText: string;
 }
 
+export interface ProjectPdfFile {
+  name: string;
+  size: number; // in bytes
+  dataUrl: string;
+  cacheControl: string; // "public, max-age=31536000"
+  uploadedAt: string;
+}
+
+export interface ProjectPhoto {
+  id: string;
+  name: string;
+  originalDataUrl: string; // WebP compressed <= 1080px, 80% quality
+  originalSize: number;
+  thumbnailUrl: string; // WebP thumbnail <= 250px, 70% quality (~20-50 KB)
+  thumbnailSize: number;
+  width: number;
+  height: number;
+  cacheControl: string; // "public, max-age=31536000"
+  uploadedAt: string;
+}
+
 export interface Project {
   id: string;
   code: string;
@@ -78,6 +99,8 @@ export interface Project {
   outcomes?: string;          // ผลลัพธ์
   outputOutcome: string;      // ผลผลิต/ผลลัพธ์
   issuesAndSolutions?: string;// ปัญหาและอุปสรรค
+  pdfFile?: ProjectPdfFile;   // ไฟล์ PDF (ไม่เกิน 2MB)
+  photos?: ProjectPhoto[];    // รูปถ่ายโครงการสูงสุด 4 รูป
   createdByUserId: string;
   createdByName: string;      // บันทึกโดย
   createdAt: string;          // วันที่บันทึก

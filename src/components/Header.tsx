@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { GovernmentEmblem } from './GovernmentEmblem';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -91,9 +90,8 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Main Header Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-        {/* Left: Emblem & Agency Title */}
+        {/* Left: Agency Title */}
         <div className="flex items-center space-x-3.5">
-          <GovernmentEmblem className="h-12 w-12 sm:h-14 sm:w-14" />
           <div>
             <h1 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 leading-tight">
               สำนักงานศึกษาธิการจังหวัดฉะเชิงเทรา

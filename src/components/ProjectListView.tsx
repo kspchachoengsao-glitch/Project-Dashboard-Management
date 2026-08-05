@@ -381,6 +381,27 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                         <div className="text-[11px] text-amber-800/90 font-medium mt-0.5 line-clamp-1">
                           📌 {p.keyFlagshipProjectTitle}
                         </div>
+                        {((p.photos && p.photos.length > 0) || p.pdfFile) && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {p.pdfFile && (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.2 rounded border border-rose-200 font-medium"
+                                title="มีไฟล์เอกสาร PDF แนบ"
+                              >
+                                <FileText className="w-3 h-3 text-rose-600" /> PDF
+                              </span>
+                            )}
+                            {p.photos && p.photos.length > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] bg-sky-50 text-sky-700 px-1.5 py-0.2 rounded border border-sky-200 font-medium"
+                                title="มีรูปถ่ายโครงการแนบ"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                รูปถ่าย ({p.photos.length})
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       <td className="px-3 py-3.5 text-slate-600 font-medium">

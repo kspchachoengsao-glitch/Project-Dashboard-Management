@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Project, User, Agency, StrategicIssue, KeyFlagshipProject, ProjectStatus } from '../types';
-import { X, Save, AlertCircle, Building2, Target, Award, Calendar, Layers, FileText, CheckCircle2, DollarSign, UserCheck, Clock } from 'lucide-react';
+import { Project, User, Agency, StrategicIssue, KeyFlagshipProject, ProjectStatus, ProjectPdfFile, ProjectPhoto } from '../types';
+import { X, Save, AlertCircle, Building2, Target, Award, Calendar, Layers, FileText, CheckCircle2, DollarSign, UserCheck, Clock, FileUp, ImagePlus, Trash2, Eye, Loader2, ShieldCheck } from 'lucide-react';
+import { validateAndProcessPdf, processPhotoWithThumbnail, formatFileSize, MAX_PDF_SIZE_BYTES } from '../utils/fileProcessingUtils';
 
 interface ProjectFormModalProps {
   isOpen: boolean;
@@ -60,6 +61,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   });
 
   const [errorMsg, setErrorMsg] = useState('');
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
 
   useEffect(() => {
     if (projectToEdit) {
@@ -71,6 +74,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         quantitativeKPI: projectToEdit.quantitativeKPI || '',
         qualitativeKPI: projectToEdit.qualitativeKPI || '',
         outcomes: projectToEdit.outcomes || projectToEdit.outputOutcome || '',
+        pdfFile: projectToEdit.pdfFile,
+        photos: projectToEdit.photos || [],
         createdByName: projectToEdit.createdByName || currentUser.name || '',
         createdAt: projectToEdit.createdAt ? projectToEdit.createdAt.substring(0, 10) : new Date().toISOString().split('T')[0],
       });
@@ -111,6 +116,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         outcomes: '',
         outputOutcome: '',
         issuesAndSolutions: '',
+        pdfFile: undefined,
+        photos: [],
         createdByUserId: currentUser.id || 'usr-admin',
         createdByName: currentUser.name || 'เจ้าหน้าที่ผู้บันทึก',
         createdAt: todayStr,
@@ -120,6 +127,74 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   }, [projectToEdit, isOpen, currentUser, agencies, strategicIssues, keyProjects]);
 
   if (!isOpen) return null;
+
+  // Handle PDF file selection & validation
+  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setErrorMsg('');
+    setIsProcessingPdf(true);
+
+    try {
+      const processedPdf = await validateAndProcessPdf(file);
+      setFormData(prev => ({ ...prev, pdfFile: processedPdf }));
+    } catch (err: any) {
+      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์ PDF');
+    } finally {
+      setIsProcessingPdf(false);
+      e.target.value = ''; // reset file input
+    }
+  };
+
+  const handleRemovePdf = () => {
+    setFormData(prev => ({ ...prev, pdfFile: undefined }));
+  };
+
+  // Handle Photos selection (Max 4 photos, auto webp compression & thumbnail generation)
+  const handlePhotosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
+
+    const currentPhotos = formData.photos || [];
+    const remainingSlots = 4 - currentPhotos.length;
+
+    if (remainingSlots <= 0) {
+      setErrorMsg('โครงการนี้มีรูปถ่ายครบ 4 รูปแล้ว (ไม่สามารถเพิ่มเกิน 4 รูปได้)');
+      return;
+    }
+
+    const filesToProcess = selectedFiles.slice(0, remainingSlots);
+    if (selectedFiles.length > remainingSlots) {
+      setErrorMsg(`สามารถเลือกเพิ่มได้อีกเพียง ${remainingSlots} รูปเท่านั้น (ถูกคัดเลือกเฉพาะ ${remainingSlots} รูปแรก)`);
+    } else {
+      setErrorMsg('');
+    }
+
+    setIsProcessingPhotos(true);
+
+    try {
+      const newPhotoPromises = filesToProcess.map(file => processPhotoWithThumbnail(file as File));
+      const processedPhotos = await Promise.all(newPhotoPromises);
+
+      setFormData(prev => ({
+        ...prev,
+        photos: [...(prev.photos || []), ...processedPhotos],
+      }));
+    } catch (err: any) {
+      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+    } finally {
+      setIsProcessingPhotos(false);
+      e.target.value = ''; // reset file input
+    }
+  };
+
+  const handleRemovePhoto = (photoId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      photos: (prev.photos || []).filter(p => p.id !== photoId),
+    }));
+  };
 
   const handleAgencyChange = (agencyId: string) => {
     const ag = agencies.find(a => a.id === agencyId);
@@ -617,6 +692,175 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   required
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Group E: ส่วนที่ 5: ไฟล์แนบ PDF และรูปถ่ายโครงการ (สูงสุด 4 รูป) */}
+          <div className="space-y-4 bg-amber-50/40 p-4 rounded-xl border border-amber-200/80">
+            <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center justify-between border-b border-amber-200/80 pb-2">
+              <span className="flex items-center gap-2 text-amber-950">
+                <FileUp className="w-4 h-4 text-amber-700" />
+                ส่วนที่ 5: เอกสารแนบ PDF และรูปถ่ายโครงการ (สูงสุด 4 รูป)
+              </span>
+              <span className="text-[11px] font-normal text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300/50 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-amber-700" />
+                Optimized Client-side Compression & Cache Header Tagging
+              </span>
+            </h3>
+
+            {/* 1. PDF File Upload */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-rose-600" />
+                  1. ไฟล์เอกสารโครงการ PDF <span className="text-slate-400 font-normal">(ขนาดไม่เกิน 2 MB)</span>
+                </label>
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-mono">
+                  Cache-Control: public, max-age=31536000
+                </span>
+              </div>
+
+              {formData.pdfFile ? (
+                <div className="flex items-center justify-between p-3 bg-rose-50/80 border border-rose-200 rounded-xl">
+                  <div className="flex items-center space-x-3 overflow-hidden">
+                    <div className="p-2 bg-rose-600 text-white rounded-lg shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="truncate">
+                      <p className="font-bold text-slate-900 truncate text-xs">{formData.pdfFile.name}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                        <span className="font-semibold text-rose-700">{formatFileSize(formData.pdfFile.size)}</span>
+                        <span>•</span>
+                        <span className="text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                          On-Demand Lazy Download Enabled
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemovePdf}
+                    className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                    title="ลบไฟล์ PDF"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-rose-200 hover:border-rose-400 rounded-xl bg-rose-50/30 hover:bg-rose-50/60 transition-all cursor-pointer text-center group">
+                    {isProcessingPdf ? (
+                      <div className="flex items-center gap-2 text-amber-800 font-semibold py-2">
+                        <Loader2 className="w-5 h-5 animate-spin text-amber-700" />
+                        <span>กำลังตรวจสอบขนาดและประมวลผลไฟล์ PDF...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <FileUp className="w-6 h-6 text-rose-500 mb-1 group-hover:scale-110 transition-transform" />
+                        <span className="font-bold text-slate-800 text-xs">คลิกเพื่อเลือกไฟล์ PDF โครงการ</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">
+                          รองรับเฉพาะไฟล์ .pdf ไม่เกิน 2 MB (ระบบจะดาวน์โหลดตามความต้องการเพื่อประหยัดแบนด์วิดท์)
+                        </span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={handlePdfChange}
+                      disabled={isProcessingPdf}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Photo Uploads (Max 4 Photos) */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <ImagePlus className="w-4 h-4 text-sky-600" />
+                    2. รูปถ่ายโครงการ (อัปโหลดสูงสุด 4 รูป)
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    ระบบจะ Resize ความกว้างไม่เกิน 1080px แปลงเป็น .webp (คุณภาพ 80%) พร้อมสร้าง Thumbnail ย่อขนาดเพื่อโหลดเร็ว
+                  </p>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300/60 shrink-0">
+                  {formData.photos?.length || 0} / 4 รูป
+                </span>
+              </div>
+
+              {/* Photos Preview Grid */}
+              {formData.photos && formData.photos.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {formData.photos.map((photo, idx) => (
+                    <div key={photo.id || idx} className="relative group bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+                      <div className="relative aspect-4/3 overflow-hidden bg-slate-200">
+                        <img
+                          src={photo.thumbnailUrl || photo.originalDataUrl}
+                          alt={`รูปโครงการ ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-slate-900/80 text-white text-[10px] font-bold">
+                          #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(photo.id)}
+                          className="absolute top-1.5 right-1.5 p-1 bg-rose-600 text-white rounded-lg opacity-90 hover:opacity-100 hover:bg-rose-700 shadow-md transition-all cursor-pointer"
+                          title="ลบรูปถ่าย"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="p-2 space-y-1 text-[10px] text-slate-600 bg-white">
+                        <div className="flex items-center justify-between font-semibold text-slate-800">
+                          <span className="truncate max-w-[90px]">{photo.name}</span>
+                          <span className="text-emerald-700 bg-emerald-50 px-1 rounded font-mono">WebP</span>
+                        </div>
+                        <div className="text-[9px] text-slate-500 flex items-center justify-between">
+                          <span>Thumb: {formatFileSize(photo.thumbnailSize)}</span>
+                          <span>Full: {formatFileSize(photo.originalSize)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload Drop Area */}
+              {(formData.photos?.length || 0) < 4 && (
+                <div>
+                  <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-xl bg-sky-50/30 hover:bg-sky-50/60 transition-all cursor-pointer text-center group">
+                    {isProcessingPhotos ? (
+                      <div className="flex items-center gap-2 text-sky-800 font-semibold py-2">
+                        <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+                        <span>กำลังบีบอัดรูปภาพเป็น .webp (1080px) และสร้าง Thumbnail...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <ImagePlus className="w-6 h-6 text-sky-600 mb-1 group-hover:scale-110 transition-transform" />
+                        <span className="font-bold text-slate-800 text-xs">
+                          เพิ่มรูปถ่ายโครงการ (เลือกเพิ่มได้อีก {4 - (formData.photos?.length || 0)} รูป)
+                        </span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">
+                          บีบอัด Client-side อัตโนมัติเป็น WebP เพื่อประหยัดพื้นที่และแบนด์วิดท์
+                        </span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotosChange}
+                      disabled={isProcessingPhotos}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
 
