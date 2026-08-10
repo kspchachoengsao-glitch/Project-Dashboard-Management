@@ -248,6 +248,7 @@ export default function App() {
           <UserManagementView
             currentUser={currentUser}
             agencies={agencies}
+            onUpdateCurrentUser={setCurrentUser}
           />
         )}
 

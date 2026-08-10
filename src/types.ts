@@ -5,6 +5,7 @@ export type ProjectStatus = 'not_started' | 'in_progress' | 'completed' | 'delay
 export interface User {
   id: string;
   username: string;
+  password?: string;
   name: string;
   email: string;
   role: Role;

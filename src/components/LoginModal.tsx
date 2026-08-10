@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { StorageService } from '../services/storage';
 import { Lock, ShieldAlert, X, Eye, EyeOff, KeyRound } from 'lucide-react';
@@ -10,10 +10,19 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('123456');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setUsername('');
+      setPassword('');
+      setErrorMsg('');
+      setShowPassword(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -36,6 +45,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       return;
     }
 
+    const expectedPassword = found.password || '123456';
+    if (password !== expectedPassword) {
+      setErrorMsg('รหัสผ่านไม่ถูกต้อง');
+      return;
+    }
+
     // Record login audit log
     StorageService.addAuditLog({
       userId: found.id,
@@ -46,6 +61,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       details: `เข้าสู่ระบบสำเร็จในบทบาท ${found.role.toUpperCase()}`,
       ipAddress: '127.0.0.1'
     });
+
+    setUsername('');
+    setPassword('');
+    setErrorMsg('');
+    setShowPassword(false);
 
     onLoginSuccess(found);
     onClose();

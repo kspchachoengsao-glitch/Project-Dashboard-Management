@@ -125,6 +125,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'usr-admin',
     username: 'admin',
+    password: '123456',
     name: 'ดร.สมศักดิ์ ผู้ดูแลระบบ',
     email: 'admin@chachoengsao.go.th',
     role: 'admin',
@@ -137,6 +138,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'usr-officer1',
     username: 'officer_spao1',
+    password: '123456',
     name: 'นางสาวจิราพร ใจดี (สพป.1)',
     email: 'jiraporn@spao1.go.th',
     role: 'user',
@@ -149,6 +151,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'usr-officer2',
     username: 'officer_vec',
+    password: '123456',
     name: 'นายอนุรักษ์ มั่นคง (อาชีวศึกษา)',
     email: 'anurak@vec.go.th',
     role: 'user',
@@ -161,6 +164,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'usr-officer3',
     username: 'officer_pao',
+    password: '123456',
     name: 'นายวิชัย สุขสวัสดิ์ (อบจ.)',
     email: 'wichai@pao-cco.go.th',
     role: 'user',
