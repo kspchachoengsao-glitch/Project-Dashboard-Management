@@ -172,14 +172,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       const pList = filteredProjects.filter(p => p.keyFlagshipProjectId === kp.id);
       const count = pList.length;
       const avgProg = count > 0 ? pList.reduce((sum, p) => sum + p.progressPercentage, 0) / count : 0;
-      const budget = pList.reduce((sum, p) => sum + p.approvedBudget, 0) / 1000000;
+      const budgetRaw = pList.reduce((sum, p) => sum + p.approvedBudget, 0);
+      const budgetMillion = budgetRaw / 1000000;
       return {
         key: `กลุ่มที่ ${idx + 1}`,
         fullTitle: kp.title,
         shortTitle: `ก.${idx + 1}`,
         progress: Math.round(avgProg),
         projectCount: count,
-        budget: Number(budget.toFixed(2)),
+        budgetRaw,
+        budgetMillion,
       };
     });
   }, [keyProjects, filteredProjects]);
@@ -364,8 +366,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-slate-500">งบประมาณที่ได้รับอนุมัติ</p>
-                <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-                  ฿{(stats.totalApprovedBudget / 1000000).toFixed(2)}M
+                <p className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
+                  {stats.totalApprovedBudget >= 1000000
+                    ? `${(stats.totalApprovedBudget / 1000000).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ล้านบาท`
+                    : `${stats.totalApprovedBudget.toLocaleString('th-TH')} บาท`}
                 </p>
               </div>
               <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
@@ -373,7 +377,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
             <p className="mt-3 text-xs text-slate-500">
-              รวมเป็นเงิน: <strong className="text-slate-800">{stats.totalApprovedBudget.toLocaleString('th-TH')} บาท</strong>
+              รวมเป็นเงินจริง: <strong className="text-slate-800">{stats.totalApprovedBudget.toLocaleString('th-TH')} บาท</strong>
+              {stats.totalApprovedBudget >= 1000000 && (
+                <span className="text-slate-400 font-normal"> ({(stats.totalApprovedBudget / 1000000).toFixed(2)} ล้านบาท)</span>
+              )}
             </p>
           </div>
 
@@ -398,7 +405,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ></div>
             </div>
             <p className="mt-1.5 text-[11px] text-slate-500 text-right">
-              เบิกจ่ายแล้ว ฿{stats.totalSpentBudget.toLocaleString('th-TH')} บาท
+              เบิกจ่ายแล้ว {stats.totalSpentBudget.toLocaleString('th-TH')} บาท
+              {stats.totalSpentBudget >= 1000000 && (
+                <span className="text-amber-800 font-semibold"> ({(stats.totalSpentBudget / 1000000).toFixed(2)} ล้านบาท)</span>
+              )}
             </p>
           </div>
 
@@ -435,10 +445,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-amber-700" />
                 <h3 className="text-sm font-bold text-slate-900">
-                  สัดส่วนงบประมาณอนุมัติและเบิกจ่าย จำแนกตามหน่วยงาน (ล้านบาท)
+                  สัดส่วนงบประมาณอนุมัติและเบิกจ่าย จำแนกตามหน่วยงาน
                 </h3>
               </div>
-              <span className="text-xs text-slate-400">หน่วย: ล้านบาท</span>
+              <span className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
+                หน่วย: บาท / ล้านบาท
+              </span>
             </div>
 
             <div className="h-72 w-full">
@@ -448,8 +460,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <XAxis dataKey="shortName" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
-                    formatter={(val: number) => [`${val.toFixed(2)} ล้านบาท`, '']}
-                    contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                    formatter={(val: number, name: string) => {
+                      const rawBaht = Math.round(val * 1000000);
+                      const label = name === 'approved' || name === 'งบอนุมัติ' ? 'งบอนุมัติ' : 'เบิกจ่ายแล้ว';
+                      if (rawBaht >= 1000000) {
+                        return [
+                          `${rawBaht.toLocaleString('th-TH')} บาท (${val.toFixed(2)} ล้านบาท)`,
+                          label
+                        ];
+                      }
+                      return [`${rawBaht.toLocaleString('th-TH')} บาท`, label];
+                    }}
+                    contentStyle={{ borderRadius: '12px', fontSize: '12px', padding: '8px 12px' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                   <Bar dataKey="approved" name="งบอนุมัติ" fill="#0284c7" radius={[4, 4, 0, 0]} />
@@ -524,10 +546,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {flagshipChartData.map((item, idx) => (
                 <div key={item.key} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-800 truncate max-w-[280px]" title={item.fullTitle}>
+                    <span className="font-semibold text-slate-800 truncate max-w-[220px]" title={item.fullTitle}>
                       {idx + 1}. {item.fullTitle}
                     </span>
-                    <span className="font-bold text-amber-800 ml-2">{item.progress}%</span>
+                    <div className="flex items-center gap-2 text-right">
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {item.budgetRaw >= 1000000
+                          ? `${item.budgetRaw.toLocaleString('th-TH')} บาท (${item.budgetMillion.toFixed(2)} ล้านบาท)`
+                          : `${item.budgetRaw.toLocaleString('th-TH')} บาท`}
+                      </span>
+                      <span className="font-bold text-amber-800 shrink-0">{item.progress}%</span>
+                    </div>
                   </div>
                   <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                     <div
@@ -549,6 +578,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   การดำเนินงานรายไตรมาส (จำนวนโครงการ & งบอนุมัติ)
                 </h3>
               </div>
+              <span className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
+                หน่วย: บาท / ล้านบาท
+              </span>
             </div>
 
             <div className="h-64 w-full">
@@ -558,10 +590,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
-                    formatter={(val: number, name: string) => [
-                      name === 'budget' ? `${val.toFixed(2)} ล้านบาท` : `${val} โครงการ`,
-                      name === 'budget' ? 'งบประมาณ' : 'จำนวนโครงการ'
-                    ]}
+                    formatter={(val: number, name: string) => {
+                      if (name === 'budget' || name === 'งบอนุมัติ (ล้านบาท)' || name === 'งบอนุมัติ') {
+                        const rawBaht = Math.round(val * 1000000);
+                        return [
+                          rawBaht >= 1000000
+                            ? `${rawBaht.toLocaleString('th-TH')} บาท (${val.toFixed(2)} ล้านบาท)`
+                            : `${rawBaht.toLocaleString('th-TH')} บาท`,
+                          'งบประมาณอนุมัติ'
+                        ];
+                      }
+                      return [`${val} โครงการ`, 'จำนวนโครงการ'];
+                    }}
                   />
                   <Bar dataKey="count" name="จำนวนโครงการ" fill="#0284c7" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="budget" name="งบอนุมัติ (ล้านบาท)" fill="#16a34a" radius={[4, 4, 0, 0]} />

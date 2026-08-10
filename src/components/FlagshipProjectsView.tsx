@@ -82,7 +82,11 @@ export const FlagshipProjectsView: React.FC<FlagshipProjectsViewProps> = ({
 
                     <div className="text-center px-3 py-1 bg-white rounded-lg border border-slate-200">
                       <span className="text-[10px] text-slate-400 block">งบอนุมัติ</span>
-                      <strong className="text-amber-900 font-bold">฿{(totalApproved / 1000000).toFixed(2)}M</strong>
+                      <strong className="text-amber-900 font-bold">
+                        {totalApproved >= 1000000
+                          ? `${(totalApproved / 1000000).toFixed(2)} ล้านบาท`
+                          : `${totalApproved.toLocaleString('th-TH')} บาท`}
+                      </strong>
                     </div>
 
                     <div className="text-center px-3 py-1 bg-teal-50 rounded-lg border border-teal-200 text-teal-800">
@@ -130,7 +134,7 @@ export const FlagshipProjectsView: React.FC<FlagshipProjectsViewProps> = ({
                           <p className="text-[11px] text-slate-500">{p.agencyName}</p>
 
                           <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60 text-slate-600">
-                            <span>งบ: <strong>฿{p.approvedBudget.toLocaleString('th-TH')}</strong></span>
+                            <span>งบ: <strong>{p.approvedBudget.toLocaleString('th-TH')} บาท</strong></span>
                             <span>สถานะ: <strong className="text-slate-800">{STATUS_THAI_MAP[p.status]}</strong></span>
                           </div>
                         </div>
