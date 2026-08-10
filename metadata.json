@@ -1,5 +1,5 @@
 {
-  "name": "ระบบบริหารและติดตามโครงการ (Project Dashboard Management System)",
+  "name": "My Dashboard Management App",
   "description": "ระบบบริหารและติดตามโครงการ สำหรับหน่วยงานราชการและทางการศึกษา จ.ฉะเชิงเทรา พร้อม Dashboard, RBAC, Audit Log และการส่งออกรายงาน",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
