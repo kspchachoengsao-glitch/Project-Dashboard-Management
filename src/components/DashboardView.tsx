@@ -76,6 +76,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
   }, [projects, filters]);
 
+  // Available Fiscal Years
+  const availableFiscalYears = useMemo<number[]>(() => {
+    const rawYears = projects.map(p => Number(p.fiscalYear)).filter(n => !isNaN(n) && n > 0);
+    const years: number[] = Array.from(new Set(rawYears));
+    if (!years.includes(2568)) years.push(2568);
+    if (!years.includes(2567)) years.push(2567);
+    return years.sort((a: number, b: number) => b - a);
+  }, [projects]);
+
   // Overall Statistics
   const stats = useMemo(() => {
     const totalCount = filteredProjects.length;
@@ -269,8 +278,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 bg-white"
               >
                 <option value="all">ปีงบประมาณ: ทั้งหมด</option>
-                <option value="2568">ปีงบประมาณ 2568</option>
-                <option value="2567">ปีงบประมาณ 2567</option>
+                {availableFiscalYears.map(yr => (
+                  <option key={yr} value={yr.toString()}>ปีงบประมาณ {yr}</option>
+                ))}
               </select>
             </div>
 

@@ -70,6 +70,15 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
   // Delete modal state
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
 
+  // Available Fiscal Years
+  const availableFiscalYears = useMemo<number[]>(() => {
+    const rawYears = projects.map(p => Number(p.fiscalYear)).filter(n => !isNaN(n) && n > 0);
+    const years: number[] = Array.from(new Set(rawYears));
+    if (!years.includes(2568)) years.push(2568);
+    if (!years.includes(2567)) years.push(2567);
+    return years.sort((a: number, b: number) => b - a);
+  }, [projects]);
+
   // Filter Projects
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
@@ -280,6 +289,23 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
               <option value="all">โครงการสำคัญ: ทั้งหมด (7 กลุ่มโครงการ)</option>
               {keyProjects.map(kp => (
                 <option key={kp.id} value={kp.id}>โครงการสำคัญกลุ่มที่ {kp.number}: {kp.title}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Fiscal Year */}
+          <div>
+            <select
+              value={filters.fiscalYear}
+              onChange={e => {
+                setFilters({ ...filters, fiscalYear: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="w-full py-2 px-2.5 text-xs rounded-xl border border-slate-300 bg-white font-medium"
+            >
+              <option value="all">ปีงบประมาณ: ทั้งหมด</option>
+              {availableFiscalYears.map(yr => (
+                <option key={yr} value={yr.toString()}>ปีงบประมาณ {yr}</option>
               ))}
             </select>
           </div>

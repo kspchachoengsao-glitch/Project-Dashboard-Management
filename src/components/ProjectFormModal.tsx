@@ -554,16 +554,26 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-800 mb-1">ปีงบประมาณ</label>
-                <select
-                  value={formData.fiscalYear || 2568}
-                  onChange={e => setFormData({ ...formData, fiscalYear: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                >
-                  <option value={2568}>2568</option>
+                <label className="block font-bold text-slate-800 mb-1">
+                  ปีงบประมาณ (พ.ศ.) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={2500}
+                  max={2650}
+                  list="fiscal-years-datalist"
+                  value={formData.fiscalYear !== undefined ? formData.fiscalYear : 2568}
+                  onChange={e => setFormData({ ...formData, fiscalYear: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  placeholder="เช่น 2568"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-900 focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+                <datalist id="fiscal-years-datalist">
                   <option value={2567}>2567</option>
+                  <option value={2568}>2568</option>
                   <option value={2569}>2569</option>
-                </select>
+                  <option value={2570}>2570</option>
+                </datalist>
               </div>
             </div>
 
