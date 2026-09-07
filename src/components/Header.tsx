@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs notranslate" translate="no">
       {/* Top Thai Government Banner */}
       <div className="bg-gradient-to-r from-amber-800 via-amber-900 to-amber-950 text-amber-50 text-xs px-4 py-1.5 flex justify-between items-center border-b border-amber-700/50">
         <div className="flex items-center space-x-2">

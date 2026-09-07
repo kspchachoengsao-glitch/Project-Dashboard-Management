@@ -184,7 +184,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 font-sans text-slate-800 flex flex-col selection:bg-amber-200">
+    <div className="min-h-screen bg-slate-100/70 font-sans text-slate-800 flex flex-col selection:bg-amber-200 notranslate" translate="no">
       {/* Sticky Government Header Navigation */}
       <Header
         currentUser={currentUser}
