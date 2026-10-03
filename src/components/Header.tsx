@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
+import { subscribeSyncStatus, SyncStatus } from '../services/storage';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -13,7 +14,10 @@ import {
   Menu,
   X,
   Building2,
-  ShieldAlert
+  ShieldAlert,
+  Cloud,
+  CloudOff,
+  RefreshCw
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -33,6 +37,17 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [thaiDateTime, setThaiDateTime] = useState('');
+  const [cloudSync, setCloudSync] = useState<{ status: SyncStatus; message: string }>({
+    status: 'connected',
+    message: 'เชื่อมต่อฐานข้อมูลคลาวด์เรียบร้อย (บันทึกถาวร)',
+  });
+
+  useEffect(() => {
+    const unsubscribe = subscribeSyncStatus((status, message) => {
+      setCloudSync({ status, message });
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -103,8 +118,40 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Auth / Role Control */}
+        {/* Right: Auth / Role Control & Cloud Sync Badge */}
         <div className="hidden md:flex items-center space-x-3">
+          {/* Cloud Sync Status Badge */}
+          <div
+            title={cloudSync.message}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              cloudSync.status === 'connected'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-2xs'
+                : cloudSync.status === 'syncing'
+                ? 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
+                : 'bg-rose-50 text-rose-800 border-rose-200'
+            }`}
+          >
+            {cloudSync.status === 'connected' && (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <Cloud className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="font-semibold">คลาวด์: บันทึกถาวร</span>
+              </>
+            )}
+            {cloudSync.status === 'syncing' && (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                <span className="font-semibold">กำลังบันทึกคลาวด์...</span>
+              </>
+            )}
+            {cloudSync.status === 'error' && (
+              <>
+                <CloudOff className="w-3.5 h-3.5 text-rose-600" />
+                <span className="font-semibold">คลาวด์ออฟไลน์</span>
+              </>
+            )}
+          </div>
+
           {isGuest ? (
             <div className="flex items-center space-x-2">
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">

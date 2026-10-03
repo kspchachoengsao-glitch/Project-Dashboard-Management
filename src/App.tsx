@@ -73,7 +73,7 @@ export default function App() {
   };
 
   // Save Project (Add or Edit)
-  const handleSaveProject = (formData: Partial<Project>) => {
+  const handleSaveProject = async (formData: Partial<Project>) => {
     const currentProjects = StorageService.getProjects();
 
     if (editingProject) {
@@ -89,7 +89,7 @@ export default function App() {
         return p;
       });
 
-      StorageService.saveProjects(updatedList);
+      await StorageService.saveProjects(updatedList);
 
       if (currentUser) {
         StorageService.addAuditLog({
@@ -142,7 +142,7 @@ export default function App() {
         updatedAt: new Date().toISOString(),
       };
 
-      StorageService.saveProjects([newProject, ...currentProjects]);
+      await StorageService.saveProjects([newProject, ...currentProjects]);
 
       if (currentUser) {
         StorageService.addAuditLog({
@@ -163,10 +163,10 @@ export default function App() {
   };
 
   // Delete Project handler
-  const handleDeleteProject = (projectToDelete: Project) => {
+  const handleDeleteProject = async (projectToDelete: Project) => {
     const currentProjects = StorageService.getProjects();
     const updated = currentProjects.filter(p => p.id !== projectToDelete.id);
-    StorageService.saveProjects(updated);
+    await StorageService.saveProjects(updated);
 
     if (currentUser) {
       StorageService.addAuditLog({
