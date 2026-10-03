@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Project, Agency, StrategicIssue, KeyFlagshipProject, ProjectFilterCriteria } from '../types';
 import { STATUS_THAI_MAP, printPDFReport } from '../utils/exportUtils';
 import {
@@ -76,14 +76,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
   }, [projects, filters]);
 
-  // Available Fiscal Years
+  // Available Fiscal Years derived strictly from projects in the database
   const availableFiscalYears = useMemo<number[]>(() => {
-    const rawYears = projects.map(p => Number(p.fiscalYear)).filter(n => !isNaN(n) && n > 0);
+    const rawYears = projects
+      .map(p => Number(p.fiscalYear))
+      .filter(n => !isNaN(n) && n > 0);
     const years: number[] = Array.from(new Set(rawYears));
-    if (!years.includes(2568)) years.push(2568);
-    if (!years.includes(2567)) years.push(2567);
     return years.sort((a: number, b: number) => b - a);
   }, [projects]);
+
+  // Reset fiscalYear filter if selected year is not present in available years
+  useEffect(() => {
+    if (filters.fiscalYear !== 'all' && !availableFiscalYears.some(y => y.toString() === filters.fiscalYear)) {
+      setFilters(prev => ({ ...prev, fiscalYear: 'all' }));
+    }
+  }, [availableFiscalYears, filters.fiscalYear]);
 
   // Overall Statistics
   const stats = useMemo(() => {
@@ -275,9 +282,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <select
                 value={filters.fiscalYear}
                 onChange={e => setFilters({ ...filters, fiscalYear: e.target.value })}
-                className="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 bg-white"
+                disabled={availableFiscalYears.length === 0}
+                className="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 bg-white disabled:bg-slate-100 disabled:text-slate-400"
               >
-                <option value="all">ปีงบประมาณ: ทั้งหมด</option>
+                <option value="all">
+                  {availableFiscalYears.length === 0 ? 'ปีงบประมาณ: (ไม่มีข้อมูลในระบบ)' : 'ปีงบประมาณ: ทั้งหมด'}
+                </option>
                 {availableFiscalYears.map(yr => (
                   <option key={yr} value={yr.toString()}>ปีงบประมาณ {yr}</option>
                 ))}
