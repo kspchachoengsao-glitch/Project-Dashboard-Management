@@ -114,24 +114,24 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
             </div>
           </div>
 
-          {/* Quick Metrics Grid (6, 7, 8, 9) */}
+          {/* Quick Metrics Grid (9, 10, 11, 12) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div>
-              <span className="text-[11px] text-slate-500 block font-medium">6.1 งบประมาณอนุมัติ</span>
+              <span className="text-[11px] text-slate-500 block font-medium">9.1 งบประมาณอนุมัติ</span>
               <strong className="text-sm font-bold text-slate-900">
                 ฿{project.approvedBudget.toLocaleString('th-TH')}
               </strong>
             </div>
 
             <div>
-              <span className="text-[11px] text-slate-500 block font-medium">6.2 เบิกจ่ายจริง ({spentPercent}%)</span>
+              <span className="text-[11px] text-slate-500 block font-medium">9.2 เบิกจ่ายจริง ({spentPercent}%)</span>
               <strong className="text-sm font-bold text-amber-800">
                 ฿{project.spentBudget.toLocaleString('th-TH')}
               </strong>
             </div>
 
             <div>
-              <span className="text-[11px] text-slate-500 block font-medium">7. สถานะโครงการ</span>
+              <span className="text-[11px] text-slate-500 block font-medium">10. สถานะและความก้าวหน้า</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-xs font-bold text-teal-700">{project.progressPercentage}%</span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
@@ -141,52 +141,74 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
             </div>
 
             <div>
-              <span className="text-[11px] text-slate-500 block font-medium">8-9. ระยะเวลาดำเนินการ</span>
+              <span className="text-[11px] text-slate-500 block font-medium">11-12. ระยะเวลาดำเนินการ</span>
               <strong className="text-[11px] font-semibold text-slate-800 block mt-0.5">
                 {project.startDate} ถึง {project.endDate}
               </strong>
             </div>
           </div>
 
-          {/* Section: Objectives, Goals & KPIs (4, 5, 10, 11, 12, 13) */}
+          {/* Section: Objectives, Goals, KPIs & Performance (4, 5, 6, 7, 8) */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <h4 className="font-bold text-slate-900 flex items-center gap-1.5 text-xs text-amber-900 border-b border-slate-200 pb-2">
               <FileText className="w-4 h-4 text-emerald-700" />
-              เป้าประสงค์ ตัวชี้วัด และวัตถุประสงค์โครงการ
+              วัตถุประสงค์ เป้าหมาย ตัวชี้วัด และผลการดำเนินงาน
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <strong className="block text-slate-900 font-bold mb-1">4. เป้าประสงค์ (Goal):</strong>
-                <p className="text-slate-700 leading-relaxed">{project.goal || 'ไม่ได้ระบุระบุรายละเอียด'}</p>
-              </div>
-
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <strong className="block text-slate-900 font-bold mb-1">5. ตัวชี้วัดโครงการ (KPI):</strong>
-                <p className="text-slate-700 leading-relaxed">{project.mainIndicator || 'ไม่ได้ระบุรายละเอียด'}</p>
-              </div>
-            </div>
-
+            {/* 4. วัตถุประสงค์ของโครงการ */}
             <div className="bg-white p-3 rounded-lg border border-slate-200">
-              <strong className="block text-slate-900 font-bold mb-1">10. วัตถุประสงค์ของโครงการ:</strong>
+              <strong className="block text-slate-900 font-bold mb-1">4. วัตถุประสงค์ของโครงการ:</strong>
               <p className="text-slate-700 leading-relaxed whitespace-pre-line">{project.objectives || 'ไม่ได้ระบุวัตถุประสงค์'}</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <strong className="block text-slate-900 font-bold mb-1">11. ตัวชี้วัดเชิงปริมาณ:</strong>
-                <p className="text-slate-700 leading-relaxed">{project.quantitativeKPI || 'ไม่ได้ระบุ'}</p>
-              </div>
+            {/* 5. เป้าหมายโครงการ (Goal) */}
+            <div className="bg-white p-3 rounded-lg border border-slate-200">
+              <strong className="block text-slate-900 font-bold mb-1">5. เป้าหมายโครงการ (Goal):</strong>
+              <p className="text-slate-700 leading-relaxed">{project.goal || 'ไม่ได้ระบุเป้าหมาย'}</p>
+            </div>
 
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <strong className="block text-slate-900 font-bold mb-1">12. ตัวชี้วัดเชิงคุณภาพ:</strong>
-                <p className="text-slate-700 leading-relaxed">{project.qualitativeKPI || 'ไม่ได้ระบุ'}</p>
+            {/* 6. ตัวชี้วัดโครงการ (KPI Indicator) */}
+            <div className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-2.5">
+              <strong className="block text-slate-900 font-bold text-xs flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                6. ตัวชี้วัดโครงการ (KPI Indicator)
+              </strong>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-600 block mb-0.5">6.1 เชิงปริมาณ (Quantitative KPI):</span>
+                  <p className="text-slate-800 leading-relaxed">{project.quantitativeKPI || '-'}</p>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-600 block mb-0.5">6.2 เชิงคุณภาพ (Qualitative KPI):</span>
+                  <p className="text-slate-800 leading-relaxed">{project.qualitativeKPI || '-'}</p>
+                </div>
               </div>
             </div>
 
+            {/* 7. ผลการดำเนินงานโครงการ/กิจกรรม */}
             <div className="bg-white p-3 rounded-lg border border-slate-200">
-              <strong className="block text-slate-900 font-bold mb-1">13. ผลลัพธ์ (Outcomes):</strong>
-              <p className="text-slate-700 leading-relaxed">{project.outcomes || project.outputOutcome || 'ไม่ได้ระบุ'}</p>
+              <strong className="block text-slate-900 font-bold mb-1">7. ผลการดำเนินงานโครงการ/กิจกรรม:</strong>
+              <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+                {project.projectPerformance || project.outputOutcome || project.outcomes || 'ไม่ได้ระบุผลการดำเนินงาน'}
+              </p>
+            </div>
+
+            {/* 8. ผลการดำเนินงานตามตัวชี้วัด */}
+            <div className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-2.5">
+              <strong className="block text-slate-900 font-bold text-xs flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                8. ผลการดำเนินงานตามตัวชี้วัด
+              </strong>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-600 block mb-0.5">8.1 เชิงปริมาณ:</span>
+                  <p className="text-slate-800 leading-relaxed">{project.kpiResultQuantitative || '-'}</p>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-600 block mb-0.5">8.2 เชิงคุณภาพ:</span>
+                  <p className="text-slate-800 leading-relaxed">{project.kpiResultQualitative || '-'}</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -319,53 +341,85 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
             )}
           </div>
 
-          {/* Location & Beneficiaries & Contact */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Users className="w-4 h-4 text-slate-500" />
-                <span><strong>กลุ่มเป้าหมาย:</strong> {project.targetGroup || '-'}</span>
+          {/* Section 4: ปัญหา/อุปสรรค, ประโยชน์ที่สาธารณชนได้รับ & พื้นที่ดำเนินการ */}
+          <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            {/* ปัญหา/อุปสรรค และแนวทางการแก้ไข (แสดงก่อนหน้า ประโยชน์ที่สาธารณชนได้รับ และ พื้นที่ดำเนินการ) */}
+            {project.issuesAndSolutions && (
+              <div className="space-y-1.5">
+                <h4 className="font-bold text-amber-900 flex items-center gap-1.5 text-xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  ปัญหา/อุปสรรค และแนวทางการแก้ไข
+                </h4>
+                <p className="text-amber-950 bg-amber-50 p-3 rounded-xl border border-amber-200 leading-relaxed">
+                  {project.issuesAndSolutions}
+                </p>
               </div>
-              <div className="flex items-center gap-2 text-slate-700">
-                <MapPin className="w-4 h-4 text-slate-500" />
-                <span><strong>พื้นที่ดำเนินการ:</strong> {project.location || '-'}</span>
-              </div>
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-slate-700">
-                <UserCheck className="w-4 h-4 text-slate-500" />
-                <span><strong>ผู้รับผิดชอบโครงการ:</strong> {project.responsiblePerson}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <span><strong>ประโยชน์ที่สาธารณชนได้รับ:</strong> {project.targetGroup || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <MapPin className="w-4 h-4 text-slate-500" />
+                  <span><strong>พื้นที่ดำเนินการ:</strong> {project.location || '-'}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-slate-700">
-                <Phone className="w-4 h-4 text-slate-500" />
-                <span><strong>เบอร์ติดต่อ:</strong> {project.contactPhone || '-'}</span>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <UserCheck className="w-4 h-4 text-slate-500" />
+                  <span><strong>ผู้รับผิดชอบโครงการ:</strong> {project.responsiblePerson}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Phone className="w-4 h-4 text-slate-500" />
+                  <span><strong>เบอร์ติดต่อ:</strong> {project.contactPhone || '-'}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Issues & Mitigation */}
-          {project.issuesAndSolutions && (
-            <div className="space-y-2 border-t border-slate-200 pt-4">
-              <h4 className="font-bold text-amber-900 flex items-center gap-1.5 text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                ปัญหา/อุปสรรค และแนวทางการแก้ไข
-              </h4>
-              <p className="text-amber-950 bg-amber-50 p-3 rounded-xl border border-amber-200 leading-relaxed">
-                {project.issuesAndSolutions}
+          {/* การประเมินผลสัมฤทธิ์ตามเป้าหมายโครงการ (ก่อนส่วนท้าย) */}
+          <div className="bg-amber-50/70 p-4 rounded-xl border border-amber-300/80 shadow-2xs flex items-center justify-between">
+            <div>
+              <strong className="block text-slate-900 font-bold text-xs sm:text-sm flex items-center gap-1.5 text-amber-950">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                การประเมินผลสัมฤทธิ์ตามเป้าหมายโครงการ
+              </strong>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                ผลการสรุปการบรรลุเป้าหมายตามวัตถุประสงค์โครงการ
               </p>
             </div>
-          )}
+            <div>
+              {project.targetAchievement === 'achieved' && (
+                <span className="px-3.5 py-1.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> บรรลุผลตามเป้าหมาย
+                </span>
+              )}
+              {project.targetAchievement === 'not_achieved' && (
+                <span className="px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs">
+                  <X className="w-4 h-4 text-rose-600" /> ไม่บรรลุผลตามเป้าหมาย
+                </span>
+              )}
+              {!project.targetAchievement && (
+                <span className="text-slate-400 text-xs italic bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                  ยังไม่มีการบันทึกการประเมิน
+                </span>
+              )}
+            </div>
+          </div>
 
-          {/* Audit Timestamp Footer (14, 15) */}
+          {/* Audit Timestamp Footer (13, 14) */}
           <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 p-3 rounded-xl">
             <span className="flex items-center gap-1">
               <UserCheck className="w-3.5 h-3.5 text-slate-600" />
-              <strong>14. บันทึกโดย:</strong> {project.createdByName}
+              <strong>13. บันทึกโดย:</strong> {project.createdByName}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-slate-600" />
-              <strong>15. วันที่บันทึก:</strong> {project.createdAt ? project.createdAt.substring(0, 10) : '-'}
+              <strong>14. วันที่บันทึก:</strong> {project.createdAt ? project.createdAt.substring(0, 10) : '-'}
             </span>
           </div>
         </div>

@@ -80,23 +80,27 @@ export interface Project {
   strategicIssueTitle: string;
   keyFlagshipProjectId: string;
   keyFlagshipProjectTitle: string;
-  goal?: string;              // เป้าประสงค์
-  mainIndicator?: string;     // ตัวชี้วัดหลัก
+  goal?: string;              // 5. เป้าหมายโครงการ (Goal)
+  mainIndicator?: string;     // ตัวชี้วัดหลัก (เดิม)
   quarter: 1 | 2 | 3 | 4;
   approvedBudget: number;     // งบประมาณอนุมัติ (บาท)
   spentBudget: number;        // งบประมาณเบิกจ่ายจริง (บาท)
   progressPercentage: number; // ความก้าวหน้า (0-100%)
   status: ProjectStatus;      // สถานะโครงการ
   fiscalYear: number;         // ปีงบประมาณ
-  targetGroup: string;        // กลุ่มเป้าหมาย
+  targetGroup: string;        // ประโยชน์ที่สาธารณชนได้รับ
   location: string;           // พื้นที่ดำเนินการ
   responsiblePerson: string;  // ผู้รับผิดชอบ
   contactPhone?: string;
   startDate: string;          // วันเริ่มต้น (YYYY-MM-DD)
   endDate: string;            // วันสิ้นสุด (YYYY-MM-DD)
-  objectives?: string;        // วัตถุประสงค์ของโครงการ
-  quantitativeKPI?: string;   // ตัวชี้วัดเชิงปริมาณ
-  qualitativeKPI?: string;    // ตัวชี้วัดเชิงคุณภาพ
+  objectives?: string;        // 4. วัตถุประสงค์ของโครงการ
+  quantitativeKPI?: string;   // 6.1 ตัวชี้วัดโครงการ เชิงปริมาณ (Quantitative KPI)
+  qualitativeKPI?: string;    // 6.2 ตัวชี้วัดโครงการ เชิงคุณภาพ (Qualitative KPI)
+  projectPerformance?: string;// 7. ผลการดำเนินงานโครงการ/กิจกรรม
+  kpiResultQuantitative?: string; // 8.1 ผลการดำเนินงานตามตัวชี้วัด เชิงปริมาณ
+  kpiResultQualitative?: string;  // 8.2 ผลการดำเนินงานตามตัวชี้วัด เชิงคุณภาพ
+  targetAchievement?: 'achieved' | 'not_achieved' | ''; // การประเมินเป้าหมาย (บรรลุผลตามเป้าหมาย / ไม่บรรลุผลตามเป้าหมาย)
   outcomes?: string;          // ผลลัพธ์
   outputOutcome: string;      // ผลผลิต/ผลลัพธ์
   issuesAndSolutions?: string;// ปัญหาและอุปสรรค

@@ -211,7 +211,10 @@ const DEMO_PHOTOS = [
   }
 ];
 
-export const INITIAL_PROJECTS: Project[] = [
+// Initial projects array is empty by default so it strictly loads from the database
+export const INITIAL_PROJECTS: Project[] = [];
+
+export const DEMO_SAMPLE_PROJECTS: Project[] = [
   {
     id: 'prj-2568-001',
     code: 'PRJ-68-001',

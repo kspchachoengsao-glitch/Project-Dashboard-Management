@@ -106,7 +106,7 @@ export function initFirestoreListeners(onDataUpdated?: () => void) {
     { key: KEYS.STRATEGIC_ISSUES, col: 'strategicIssues', fallback: INITIAL_STRATEGIC_ISSUES },
     { key: KEYS.KEY_PROJECTS, col: 'keyProjects', fallback: INITIAL_KEY_FLAGSHIP_PROJECTS },
     { key: KEYS.USERS, col: 'users', fallback: INITIAL_USERS },
-    { key: KEYS.PROJECTS, col: 'projects', fallback: INITIAL_PROJECTS },
+    { key: KEYS.PROJECTS, col: 'projects', fallback: [] },
     { key: KEYS.AUDIT_LOGS, col: 'auditLogs', fallback: INITIAL_AUDIT_LOGS },
   ];
 
@@ -175,7 +175,14 @@ export const StorageService = {
   },
 
   getProjects(): Project[] {
-    return getItem<Project[]>(KEYS.PROJECTS, INITIAL_PROJECTS);
+    const list = getItem<Project[]>(KEYS.PROJECTS, []);
+    // Ensure any legacy demo projects with 'prj-2568-00' do not pollute the view
+    if (list.some(p => p.id.startsWith('prj-2568-00'))) {
+      const cleaned = list.filter(p => !p.id.startsWith('prj-2568-00'));
+      setItem(KEYS.PROJECTS, cleaned);
+      return cleaned;
+    }
+    return list;
   },
   async saveProjects(projects: Project[]): Promise<boolean> {
     const cleaned = cleanForFirestore(projects);

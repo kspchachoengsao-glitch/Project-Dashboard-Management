@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, User, Agency, StrategicIssue, KeyFlagshipProject, ProjectStatus, ProjectPdfFile, ProjectPhoto } from '../types';
+import { StorageService } from '../services/storage';
 import { X, Save, AlertCircle, Building2, Target, Award, Calendar, Layers, FileText, CheckCircle2, DollarSign, UserCheck, Clock, FileUp, ImagePlus, Trash2, Eye, Loader2, ShieldCheck } from 'lucide-react';
 import { validateAndProcessPdf, processPhotoWithThumbnail, formatFileSize, MAX_PDF_SIZE_BYTES } from '../utils/fileProcessingUtils';
 
@@ -35,23 +36,27 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     strategicIssueTitle: '',
     keyFlagshipProjectId: '',
     keyFlagshipProjectTitle: '',
+    objectives: '',
     goal: '',
+    quantitativeKPI: '',
+    qualitativeKPI: '',
+    projectPerformance: '',
+    kpiResultQuantitative: '',
+    kpiResultQualitative: '',
+    targetAchievement: '',
     mainIndicator: '',
     quarter: 1,
     approvedBudget: 0,
     spentBudget: 0,
     progressPercentage: 0,
     status: 'not_started',
-    fiscalYear: 2568,
+    fiscalYear: new Date().getFullYear() + 543,
     targetGroup: '',
     location: '',
     responsiblePerson: currentUser.name || '',
     contactPhone: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
-    objectives: '',
-    quantitativeKPI: '',
-    qualitativeKPI: '',
     outcomes: '',
     outputOutcome: '',
     issuesAndSolutions: '',
@@ -64,15 +69,33 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
 
+  // Dynamic available fiscal years strictly from existing projects + current Buddhist year
+  const currentBuddhistYear = new Date().getFullYear() + 543;
+  const suggestedFiscalYears = React.useMemo(() => {
+    const existingYears = StorageService.getProjects()
+      .map(p => Number(p.fiscalYear))
+      .filter(n => !isNaN(n) && n > 0);
+    const setYears = new Set<number>(existingYears);
+    if (setYears.size === 0) {
+      setYears.add(currentBuddhistYear);
+    }
+    return Array.from(setYears).sort((a, b) => b - a);
+  }, [isOpen, currentBuddhistYear]);
+
   useEffect(() => {
     if (projectToEdit) {
       setFormData({
         ...projectToEdit,
-        goal: projectToEdit.goal || '',
-        mainIndicator: projectToEdit.mainIndicator || '',
         objectives: projectToEdit.objectives || '',
+        goal: projectToEdit.goal || '',
         quantitativeKPI: projectToEdit.quantitativeKPI || '',
         qualitativeKPI: projectToEdit.qualitativeKPI || '',
+        projectPerformance: projectToEdit.projectPerformance || projectToEdit.outputOutcome || projectToEdit.outcomes || '',
+        kpiResultQuantitative: projectToEdit.kpiResultQuantitative || '',
+        kpiResultQualitative: projectToEdit.kpiResultQualitative || '',
+        targetAchievement: projectToEdit.targetAchievement || '',
+        mainIndicator: projectToEdit.mainIndicator || '',
+        targetGroup: projectToEdit.targetGroup || '',
         outcomes: projectToEdit.outcomes || projectToEdit.outputOutcome || '',
         pdfFile: projectToEdit.pdfFile,
         photos: projectToEdit.photos || [],
@@ -80,12 +103,15 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         createdAt: projectToEdit.createdAt ? projectToEdit.createdAt.substring(0, 10) : new Date().toISOString().split('T')[0],
       });
     } else {
-      // Default auto code
-      const autoCode = `PRJ-68-${Math.floor(100 + Math.random() * 900)}`;
+      // Default auto code based on selected/current fiscal year
+      const defaultFiscalYear = suggestedFiscalYears[0] || currentBuddhistYear;
+      const shortYear = String(defaultFiscalYear).slice(-2);
+      const autoCode = `PRJ-${shortYear}-${Math.floor(100 + Math.random() * 900)}`;
       const defaultAgency = agencies.find(a => a.id === currentUser.agencyId) || agencies[0];
       const defaultStrat = strategicIssues[0];
       const defaultKeyProg = keyProjects[0];
       const todayStr = new Date().toISOString().split('T')[0];
+      const adYear = defaultFiscalYear - 543;
 
       setFormData({
         code: autoCode,
@@ -96,23 +122,27 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         strategicIssueTitle: defaultStrat?.title || '',
         keyFlagshipProjectId: defaultKeyProg?.id || '',
         keyFlagshipProjectTitle: defaultKeyProg?.title || '',
+        objectives: '',
         goal: '',
+        quantitativeKPI: '',
+        qualitativeKPI: '',
+        projectPerformance: '',
+        kpiResultQuantitative: '',
+        kpiResultQualitative: '',
+        targetAchievement: '',
         mainIndicator: '',
         quarter: 1,
         approvedBudget: 500000,
         spentBudget: 0,
         progressPercentage: 0,
         status: 'not_started',
-        fiscalYear: 2568,
+        fiscalYear: defaultFiscalYear,
         targetGroup: '',
         location: 'จังหวัดฉะเชิงเทรา',
         responsiblePerson: currentUser.name,
         contactPhone: '',
-        startDate: '2026-01-01',
-        endDate: '2026-03-31',
-        objectives: '',
-        quantitativeKPI: '',
-        qualitativeKPI: '',
+        startDate: `${adYear}-01-01`,
+        endDate: `${adYear}-03-31`,
         outcomes: '',
         outputOutcome: '',
         issuesAndSolutions: '',
@@ -124,7 +154,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       });
     }
     setErrorMsg('');
-  }, [projectToEdit, isOpen, currentUser, agencies, strategicIssues, keyProjects]);
+  }, [projectToEdit, isOpen, currentUser, agencies, strategicIssues, keyProjects, suggestedFiscalYears, currentBuddhistYear]);
 
   if (!isOpen) return null;
 
@@ -238,11 +268,13 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       return;
     }
 
-    const outputMerged = formData.outcomes || formData.outputOutcome || '';
+    const outputMerged = formData.projectPerformance || formData.outcomes || formData.outputOutcome || '';
 
     onSave({
       ...formData,
+      projectPerformance: outputMerged,
       outputOutcome: outputMerged,
+      outcomes: outputMerged,
     });
     onClose();
   };
@@ -374,114 +406,148 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
             </div>
           </div>
 
-          {/* Group B: 4. เป้าประสงค์ / 5. ตัวชี้วัด / 10. วัตถุประสงค์ / 11. ตัวชี้วัดเชิงปริมาณ / 12. ตัวชี้วัดเชิงคุณภาพ / 13. ผลลัพธ์ */}
-          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          {/* ส่วนที่ 2: วัตถุประสงค์ เป้าหมาย ตัวชี้วัด และผลการดำเนินงาน */}
+          <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 text-amber-900 border-b border-slate-200 pb-2">
               <FileText className="w-4 h-4 text-emerald-700" />
-              ส่วนที่ 2: วัตถุประสงค์ เป้าประสงค์ ตัวชี้วัด และผลลัพธ์
+              ส่วนที่ 2: วัตถุประสงค์ เป้าหมาย ตัวชี้วัด และผลการดำเนินงาน
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* 4. เป้าประสงค์ */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  4. เป้าประสงค์ (Goal)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.goal || ''}
-                  onChange={e => setFormData({ ...formData, goal: e.target.value })}
-                  placeholder="ระบุเป้าประสงค์หลักของโครงการ..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                />
-              </div>
-
-              {/* 5. ตัวชี้วัด */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  5. ตัวชี้วัดโครงการ (KPI Indicator)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.mainIndicator || ''}
-                  onChange={e => setFormData({ ...formData, mainIndicator: e.target.value })}
-                  placeholder="ระบุตัวชี้วัดความสำเร็จของโครงการ..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                />
-              </div>
-            </div>
-
-            {/* 10. วัตถุประสงค์ของโครงการ */}
+            {/* 4. วัตถุประสงค์ของโครงการ */}
             <div>
-              <label className="block font-bold text-slate-800 mb-1">
-                10. วัตถุประสงค์ของโครงการ
+              <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-amber-700" />
+                4. วัตถุประสงค์ของโครงการ
               </label>
               <textarea
                 rows={2}
                 value={formData.objectives || ''}
                 onChange={e => setFormData({ ...formData, objectives: e.target.value })}
-                placeholder="ข้อ 1. เพื่อ..., ข้อ 2. เพื่อ..."
+                placeholder="ระบุวัตถุประสงค์ของโครงการ เช่น 1. เพื่อ..., 2. เพื่อ..."
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* 11. ตัวชี้วัดเชิงปริมาณ */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  11. ตัวชี้วัดเชิงปริมาณ (Quantitative KPI)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.quantitativeKPI || ''}
-                  onChange={e => setFormData({ ...formData, quantitativeKPI: e.target.value })}
-                  placeholder="เช่น จำนวนผู้เข้ารับการอบรมไม่น้อยกว่า 500 คน..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                />
-              </div>
-
-              {/* 12. ตัวชี้วัดเชิงคุณภาพ */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  12. ตัวชี้วัดเชิงคุณภาพ (Qualitative KPI)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.qualitativeKPI || ''}
-                  onChange={e => setFormData({ ...formData, qualitativeKPI: e.target.value })}
-                  placeholder="เช่น ร้อยละ 85 ของผู้เข้าร่วมนำความรู้ไปประยุกต์ใช้ได้จริง..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                />
-              </div>
-            </div>
-
-            {/* 13. ผลลัพธ์ */}
+            {/* 5. เป้าหมายโครงการ (Goal) */}
             <div>
-              <label className="block font-bold text-slate-800 mb-1">
-                13. ผลลัพธ์ (Outcomes / Expected Results)
+              <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-amber-700" />
+                5. เป้าหมายโครงการ (Goal)
               </label>
               <textarea
                 rows={2}
-                value={formData.outcomes || ''}
-                onChange={e => setFormData({ ...formData, outcomes: e.target.value, outputOutcome: e.target.value })}
-                placeholder="ระบุผลลัพธ์ที่เป็นรูปธรรมและคุณค่าที่เกิดขึ้น..."
+                value={formData.goal || ''}
+                onChange={e => setFormData({ ...formData, goal: e.target.value })}
+                placeholder="ระบุเป้าหมายโครงการ (Goal) หรือความคาดหวังหลัก..."
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
               />
             </div>
+
+            {/* 6. ตัวชี้วัดโครงการ (KPI Indicator) ข้อย่อย 6.1 เชิงปริมาณ และ 6.2 เชิงคุณภาพ */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-slate-900">
+                <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                6. ตัวชี้วัดโครงการ (KPI Indicator)
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 6.1 เชิงปริมาณ */}
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                    6.1 เชิงปริมาณ (Quantitative KPI)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.quantitativeKPI || ''}
+                    onChange={e => setFormData({ ...formData, quantitativeKPI: e.target.value })}
+                    placeholder="เช่น จำนวนผู้เข้ารับการอบรมไม่น้อยกว่า 500 คน..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white text-xs"
+                  />
+                </div>
+                {/* 6.2 เชิงคุณภาพ */}
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                    6.2 เชิงคุณภาพ (Qualitative KPI)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.qualitativeKPI || ''}
+                    onChange={e => setFormData({ ...formData, qualitativeKPI: e.target.value })}
+                    placeholder="เช่น ร้อยละ 85 ของผู้เข้าร่วมนำความรู้ไปประยุกต์ใช้ได้จริง..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 7. ผลการดำเนินงานโครงการ/กิจกรรม */}
+            <div>
+              <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-teal-700" />
+                7. ผลการดำเนินงานโครงการ/กิจกรรม
+              </label>
+              <textarea
+                rows={2}
+                value={formData.projectPerformance || formData.outputOutcome || formData.outcomes || ''}
+                onChange={e => setFormData({
+                  ...formData,
+                  projectPerformance: e.target.value,
+                  outputOutcome: e.target.value,
+                  outcomes: e.target.value
+                })}
+                placeholder="ระบุผลการดำเนินงาน กิจกรรมที่ได้จัดขึ้น การมีส่วนร่วม และความคืบหน้าที่เกิดขึ้นจริง..."
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+              />
+            </div>
+
+            {/* 8. ผลการดำเนินงานตามตัวชี้วัด ข้อย่อย 8.1 เชิงปริมาณ 8.2 เชิงคุณภาพ */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-slate-900">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                8. ผลการดำเนินงานตามตัวชี้วัด
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 8.1 เชิงปริมาณ */}
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                    8.1 เชิงปริมาณ
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.kpiResultQuantitative || ''}
+                    onChange={e => setFormData({ ...formData, kpiResultQuantitative: e.target.value })}
+                    placeholder="เช่น มีผู้เข้าร่วมจริง 520 คน (คิดเป็น 104% ของเป้าหมาย)..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white text-xs"
+                  />
+                </div>
+                {/* 8.2 เชิงคุณภาพ */}
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                    8.2 เชิงคุณภาพ
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.kpiResultQualitative || ''}
+                    onChange={e => setFormData({ ...formData, kpiResultQualitative: e.target.value })}
+                    placeholder="เช่น ผลการประเมินความพึงพอใจอยู่ในระดับดีมาก ร้อยละ 91.5..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white text-xs"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Group C: 6. งบประมาณ / 7. สถานะโครงการ / 8. วันเริ่มต้น / 9. วันสิ้นสุด */}
+          {/* Group C: 9. งบประมาณ / 10. สถานะโครงการ / 11. วันเริ่มต้น / 12. วันสิ้นสุด */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 text-amber-900 border-b border-slate-200 pb-2">
               <DollarSign className="w-4 h-4 text-emerald-600" />
               ส่วนที่ 3: งบประมาณ ระยะเวลา และสถานะการดำเนินงาน
             </h3>
 
-            {/* 6. งบประมาณ */}
+            {/* 9. งบประมาณ */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 p-3 rounded-xl border border-amber-200/80">
               <div>
                 <label className="block font-bold text-slate-800 mb-1">
-                  6.1 งบประมาณที่ได้รับอนุมัติ (บาท)
+                  9.1 งบประมาณที่ได้รับอนุมัติ (บาท)
                 </label>
                 <input
                   type="number"
@@ -493,7 +559,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               </div>
               <div>
                 <label className="block font-bold text-slate-800 mb-1">
-                  6.2 ยอดเงินเบิกจ่ายจริง (บาท)
+                  9.2 ยอดเงินเบิกจ่ายจริง (บาท)
                 </label>
                 <input
                   type="number"
@@ -505,11 +571,11 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               </div>
             </div>
 
-            {/* 7. สถานะโครงการ & Progress % */}
+            {/* 10. สถานะโครงการ & Progress % */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block font-bold text-slate-800 mb-1">
-                  7.1 สถานะโครงการ
+                  10.1 สถานะโครงการ
                 </label>
                 <select
                   value={formData.status || 'not_started'}
@@ -526,7 +592,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
               <div>
                 <label className="block font-bold text-slate-800 mb-1">
-                  7.2 ความก้าวหน้า (%): <span className="text-teal-700 font-extrabold">{formData.progressPercentage}%</span>
+                  10.2 ความก้าวหน้า (%): <span className="text-teal-700 font-extrabold">{formData.progressPercentage}%</span>
                 </label>
                 <input
                   type="range"
@@ -562,27 +628,26 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   min={2500}
                   max={2650}
                   list="fiscal-years-datalist"
-                  value={formData.fiscalYear !== undefined ? formData.fiscalYear : 2568}
+                  value={formData.fiscalYear !== undefined ? formData.fiscalYear : (suggestedFiscalYears[0] || currentBuddhistYear)}
                   onChange={e => setFormData({ ...formData, fiscalYear: e.target.value === '' ? undefined : Number(e.target.value) })}
-                  placeholder="เช่น 2568"
+                  placeholder={`เช่น ${suggestedFiscalYears[0] || currentBuddhistYear}`}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-900 focus:ring-2 focus:ring-amber-500"
                   required
                 />
                 <datalist id="fiscal-years-datalist">
-                  <option value={2567}>2567</option>
-                  <option value={2568}>2568</option>
-                  <option value={2569}>2569</option>
-                  <option value={2570}>2570</option>
+                  {suggestedFiscalYears.map(yr => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
                 </datalist>
               </div>
             </div>
 
-            {/* 8. วันเริ่มต้น & 9. วันสิ้นสุด */}
+            {/* 11. วันเริ่มต้น & 12. วันสิ้นสุด */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-amber-700" />
-                  8. วันเริ่มต้นโครงการ
+                  11. วันเริ่มต้นโครงการ
                 </label>
                 <input
                   type="date"
@@ -596,7 +661,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               <div>
                 <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-amber-700" />
-                  9. วันสิ้นสุดโครงการ
+                  12. วันสิ้นสุดโครงการ
                 </label>
                 <input
                   type="date"
@@ -609,21 +674,33 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
             </div>
           </div>
 
-          {/* Group D: 14. บันทึกโดย / 15. วันที่บันทึก & รายละเอียดการประสานงาน */}
+          {/* Group D: ปัญหา/อุปสรรค, ประโยชน์ที่สาธารณชนได้รับ / 13. บันทึกโดย / 14. วันที่บันทึก */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 text-amber-900 border-b border-slate-200 pb-2">
               <UserCheck className="w-4 h-4 text-sky-700" />
               ส่วนที่ 4: ข้อมูลพื้นที่ ผู้รับผิดชอบ และผู้บันทึกข้อมูล
             </h3>
 
+            {/* ปัญหา/อุปสรรค และแนวทางแก้ไข (นำมาไว้ก่อนหน้า ประโยชน์ที่สาธารณชนได้รับ และ พื้นที่ดำเนินการ) */}
+            <div>
+              <label className="block font-bold text-slate-800 mb-1">ปัญหา/อุปสรรค และแนวทางแก้ไข</label>
+              <textarea
+                rows={2}
+                value={formData.issuesAndSolutions || ''}
+                onChange={e => setFormData({ ...formData, issuesAndSolutions: e.target.value })}
+                placeholder="ระบุข้อจำกัดหรือปัญหาการดำเนินงาน (ถ้ามี)..."
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+              />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-slate-800 mb-1">กลุ่มเป้าหมาย / ผู้รับผลประโยชน์</label>
+                <label className="block font-bold text-slate-800 mb-1">ประโยชน์ที่สาธารณชนได้รับ</label>
                 <input
                   type="text"
                   value={formData.targetGroup || ''}
                   onChange={e => setFormData({ ...formData, targetGroup: e.target.value })}
-                  placeholder="เช่น ครูและนักเรียน 500 คน..."
+                  placeholder="เช่น นักเรียนและชุมชนในจังหวัดฉะเชิงเทราได้รับโอกาสทางการศึกษา..."
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                 />
               </div>
@@ -661,23 +738,12 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-slate-800 mb-1">ปัญหา/อุปสรรค และแนวทางแก้ไข</label>
-              <textarea
-                rows={2}
-                value={formData.issuesAndSolutions || ''}
-                onChange={e => setFormData({ ...formData, issuesAndSolutions: e.target.value })}
-                placeholder="ระบุข้อจำกัดหรือปัญหาการดำเนินงาน (ถ้ามี)..."
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-              />
-            </div>
-
-            {/* 14. บันทึกโดย & 15. วันที่บันทึก */}
+            {/* 13. บันทึกโดย & 14. วันที่บันทึก */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-100 p-3 rounded-xl border border-slate-300/80">
               <div>
                 <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                   <UserCheck className="w-3.5 h-3.5 text-slate-600" />
-                  14. บันทึกโดย <span className="text-rose-500">*</span>
+                  13. บันทึกโดย <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -692,7 +758,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               <div>
                 <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-600" />
-                  15. วันที่บันทึก <span className="text-rose-500">*</span>
+                  14. วันที่บันทึก <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -871,6 +937,57 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   </label>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* การประเมินผลสัมฤทธิ์ตามเป้าหมายโครงการ (นำมาไว้ก่อนปุ่มบันทึก) */}
+          <div className="bg-amber-50/70 p-4 rounded-xl border border-amber-300/80 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 text-amber-950">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                การประเมินผลสัมฤทธิ์ตามเป้าหมายโครงการ
+              </label>
+              <span className="text-[11px] text-amber-800 font-medium bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-300/60">
+                เลือกอย่างใดอย่างหนึ่ง
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600">
+              ทำเครื่องหมายในช่องเช็คบ็อกซ์เพื่อประเมินผลสรุปของโครงการตามเป้าหมายที่กำหนด
+            </p>
+            <div className="flex flex-wrap items-center gap-4 pt-1 text-xs font-semibold">
+              <label className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border cursor-pointer transition-all ${
+                formData.targetAchievement === 'achieved'
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={formData.targetAchievement === 'achieved'}
+                  onChange={() => setFormData({
+                    ...formData,
+                    targetAchievement: formData.targetAchievement === 'achieved' ? '' : 'achieved'
+                  })}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                />
+                <span className="text-emerald-800 font-bold">บรรลุผลตามเป้าหมาย</span>
+              </label>
+
+              <label className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border cursor-pointer transition-all ${
+                formData.targetAchievement === 'not_achieved'
+                  ? 'bg-rose-50 border-rose-500 text-rose-900 ring-2 ring-rose-500/20 shadow-xs'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={formData.targetAchievement === 'not_achieved'}
+                  onChange={() => setFormData({
+                    ...formData,
+                    targetAchievement: formData.targetAchievement === 'not_achieved' ? '' : 'not_achieved'
+                  })}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 accent-rose-600 cursor-pointer"
+                />
+                <span className="text-rose-800 font-bold">ไม่บรรลุผลตามเป้าหมาย</span>
+              </label>
             </div>
           </div>
 

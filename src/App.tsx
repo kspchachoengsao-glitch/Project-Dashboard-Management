@@ -104,9 +104,13 @@ export default function App() {
       }
     } else {
       // Add new
+      const assignedFiscalYear = formData.fiscalYear || (new Date().getFullYear() + 543);
+      const shortYear = String(assignedFiscalYear).slice(-2);
+      const adYear = assignedFiscalYear - 543;
+
       const newProject: Project = {
         id: `prj-${Date.now()}`,
-        code: formData.code || `PRJ-68-${Math.floor(100 + Math.random() * 900)}`,
+        code: formData.code || `PRJ-${shortYear}-${Math.floor(100 + Math.random() * 900)}`,
         name: formData.name || 'โครงการใหม่',
         agencyId: formData.agencyId || agencies[0]?.id || '',
         agencyName: formData.agencyName || agencies[0]?.name || '',
@@ -121,16 +125,20 @@ export default function App() {
         spentBudget: formData.spentBudget || 0,
         progressPercentage: formData.progressPercentage || 0,
         status: formData.status || 'in_progress',
-        fiscalYear: formData.fiscalYear || 2568,
+        fiscalYear: assignedFiscalYear,
         targetGroup: formData.targetGroup || '',
         location: formData.location || 'จังหวัดฉะเชิงเทรา',
         responsiblePerson: formData.responsiblePerson || currentUser?.name || 'ผู้ดูแลระบบ',
         contactPhone: formData.contactPhone || '',
-        startDate: formData.startDate || '2568-01-01',
-        endDate: formData.endDate || '2568-03-31',
+        startDate: formData.startDate || `${adYear}-01-01`,
+        endDate: formData.endDate || `${adYear}-03-31`,
         objectives: formData.objectives || '',
         quantitativeKPI: formData.quantitativeKPI || '',
         qualitativeKPI: formData.qualitativeKPI || '',
+        projectPerformance: formData.projectPerformance || formData.outputOutcome || formData.outcomes || '',
+        kpiResultQuantitative: formData.kpiResultQuantitative || '',
+        kpiResultQualitative: formData.kpiResultQualitative || '',
+        targetAchievement: formData.targetAchievement || '',
         outcomes: formData.outcomes || '',
         outputOutcome: formData.outputOutcome || '',
         issuesAndSolutions: formData.issuesAndSolutions || '',

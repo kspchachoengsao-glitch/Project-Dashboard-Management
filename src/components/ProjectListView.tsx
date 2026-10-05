@@ -312,10 +312,12 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
               className="w-full py-2 px-2.5 text-xs rounded-xl border border-slate-300 bg-white font-medium disabled:bg-slate-100 disabled:text-slate-400"
             >
               <option value="all">
-                {availableFiscalYears.length === 0 ? 'ปีงบประมาณ: (ไม่มีข้อมูลในระบบ)' : 'ปีงบประมาณ: ทั้งหมด'}
+                {availableFiscalYears.length === 0 ? 'ปีงบประมาณ: (ไม่มีข้อมูลในฐานข้อมูล)' : 'ปีงบประมาณ: ทั้งหมด'}
               </option>
               {availableFiscalYears.map(yr => (
-                <option key={yr} value={yr.toString()}>ปีงบประมาณ {yr}</option>
+                <option key={yr} value={yr.toString()}>
+                  ปีงบประมาณ {yr} {yr >= 2500 ? `(ปี ${String(yr).slice(-2)})` : ''}
+                </option>
               ))}
             </select>
           </div>
