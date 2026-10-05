@@ -132,6 +132,7 @@ export interface ProjectFilterCriteria {
   keyFlagshipProjectId: string;
   quarter: string; // 'all' or '1','2','3','4'
   status: string; // 'all' or ProjectStatus
+  targetAchievement?: string; // 'all' | 'achieved' | 'not_achieved' | 'unassessed'
   minBudget?: number;
   maxBudget?: number;
 }
