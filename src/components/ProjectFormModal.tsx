@@ -12,7 +12,7 @@ interface ProjectFormModalProps {
   strategicIssues: StrategicIssue[];
   keyProjects: KeyFlagshipProject[];
   onClose: () => void;
-  onSave: (projectData: Partial<Project>) => void;
+  onSave: (projectData: Partial<Project>) => Promise<boolean | void> | void;
 }
 
 export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
@@ -26,6 +26,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   onSave,
 }) => {
   const isEditing = !!projectToEdit;
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Project>>({
     code: '',
@@ -253,7 +254,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name?.trim()) {
       setErrorMsg('กรุณากรอกชื่อโครงการ');
@@ -270,13 +271,22 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
     const outputMerged = formData.projectPerformance || formData.outcomes || formData.outputOutcome || '';
 
-    onSave({
-      ...formData,
-      projectPerformance: outputMerged,
-      outputOutcome: outputMerged,
-      outcomes: outputMerged,
-    });
-    onClose();
+    setIsSaving(true);
+    setErrorMsg('');
+    try {
+      await onSave({
+        ...formData,
+        projectPerformance: outputMerged,
+        outputOutcome: outputMerged,
+        outcomes: outputMerged,
+      });
+      onClose();
+    } catch (err: any) {
+      console.error('Failed to save project:', err);
+      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลโครงการ');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -789,7 +799,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               <div className="flex items-center justify-between">
                 <label className="font-bold text-slate-800 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-rose-600" />
-                  1. ไฟล์เอกสารโครงการ PDF <span className="text-slate-400 font-normal">(ขนาดไม่เกิน 2 MB)</span>
+                  1. ไฟล์เอกสารโครงการ PDF <span className="text-slate-400 font-normal">(ขนาดไม่เกิน 5 MB)</span>
                 </label>
                 <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-mono">
                   Cache-Control: public, max-age=31536000
@@ -835,7 +845,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                         <FileUp className="w-6 h-6 text-rose-500 mb-1 group-hover:scale-110 transition-transform" />
                         <span className="font-bold text-slate-800 text-xs">คลิกเพื่อเลือกไฟล์ PDF โครงการ</span>
                         <span className="text-[11px] text-slate-500 mt-0.5">
-                          รองรับเฉพาะไฟล์ .pdf ไม่เกิน 2 MB (ระบบจะดาวน์โหลดตามความต้องการเพื่อประหยัดแบนด์วิดท์)
+                          รองรับเฉพาะไฟล์ .pdf ไม่เกิน 5 MB (ระบบจะดาวน์โหลดตามความต้องการเพื่อประหยัดแบนด์วิดท์)
                         </span>
                       </>
                     )}
@@ -1002,10 +1012,20 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              disabled={isSaving || isProcessingPdf || isProcessingPhotos}
+              className="px-6 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 disabled:bg-amber-400 text-white font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              บันทึกข้อมูลโครงการ
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>กำลังบันทึกข้อมูลและอัปโหลดไฟล์...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>บันทึกข้อมูลโครงการ</span>
+                </>
+              )}
             </button>
           </div>
         </form>

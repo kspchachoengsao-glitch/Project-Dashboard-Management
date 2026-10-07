@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Project, ProjectPhoto } from '../types';
 import { STATUS_THAI_MAP, printPDFReport } from '../utils/exportUtils';
 import { formatFileSize } from '../utils/fileProcessingUtils';
+import { StorageService } from '../services/storage';
 import {
   X,
   Printer,
@@ -27,7 +28,8 @@ import {
   Image as ImageIcon,
   Eye,
   Maximize2,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 
 interface ProjectDetailModalProps {
@@ -38,6 +40,17 @@ interface ProjectDetailModalProps {
 export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project, onClose }) => {
   const [selectedFullPhoto, setSelectedFullPhoto] = useState<ProjectPhoto | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(project?.pdfFile?.dataUrl || null);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [fullPhotoUrl, setFullPhotoUrl] = useState<string | null>(null);
+  const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
+
+  useEffect(() => {
+    setPdfDataUrl(project?.pdfFile?.dataUrl || null);
+    setShowPdfViewer(false);
+    setSelectedFullPhoto(null);
+    setFullPhotoUrl(null);
+  }, [project]);
 
   if (!project) return null;
 
@@ -45,14 +58,63 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
     ? ((project.spentBudget / project.approvedBudget) * 100).toFixed(1)
     : '0';
 
-  const handleDownloadPdf = () => {
-    if (!project.pdfFile?.dataUrl) return;
+  const ensurePdfDataUrl = async (): Promise<string | null> => {
+    if (pdfDataUrl) return pdfDataUrl;
+    if (!project.pdfFile) return null;
+
+    setIsLoadingPdf(true);
+    try {
+      const url = await StorageService.getPdfDataUrl(project.id, project.pdfFile.fileId);
+      if (url) {
+        setPdfDataUrl(url);
+        return url;
+      }
+    } catch (err) {
+      console.error('Error fetching PDF:', err);
+    } finally {
+      setIsLoadingPdf(false);
+    }
+    return null;
+  };
+
+  const handleTogglePdfViewer = async () => {
+    if (showPdfViewer) {
+      setShowPdfViewer(false);
+      return;
+    }
+    const url = await ensurePdfDataUrl();
+    if (url) {
+      setShowPdfViewer(true);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    const url = await ensurePdfDataUrl();
+    if (!url || !project.pdfFile) return;
     const link = document.createElement('a');
-    link.href = project.pdfFile.dataUrl;
+    link.href = url;
     link.download = project.pdfFile.name || `${project.code}_เอกสารโครงการ.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleOpenFullPhoto = async (photo: ProjectPhoto) => {
+    setSelectedFullPhoto(photo);
+    setFullPhotoUrl(photo.originalDataUrl || null);
+    if (!photo.originalDataUrl) {
+      setIsLoadingPhoto(true);
+      try {
+        const url = await StorageService.getPhotoDataUrl(photo.id);
+        if (url) {
+          setFullPhotoUrl(url);
+        }
+      } catch (err) {
+        console.error('Error fetching full photo:', err);
+      } finally {
+        setIsLoadingPhoto(false);
+      }
+    }
   };
 
   return (
@@ -231,7 +293,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                   <div
                     key={photo.id || idx}
                     className="relative group bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs hover:border-sky-400 transition-all cursor-pointer"
-                    onClick={() => setSelectedFullPhoto(photo)}
+                    onClick={() => handleOpenFullPhoto(photo)}
                   >
                     <div className="relative aspect-4/3 overflow-hidden bg-slate-100">
                       <img
@@ -298,17 +360,32 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
                   <div className="flex items-center space-x-2 shrink-0">
                     <button
-                      onClick={() => setShowPdfViewer(!showPdfViewer)}
-                      className="px-3 py-1.5 rounded-lg border border-rose-300 text-rose-800 hover:bg-rose-50 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      onClick={handleTogglePdfViewer}
+                      disabled={isLoadingPdf}
+                      className="px-3 py-1.5 rounded-lg border border-rose-300 text-rose-800 hover:bg-rose-50 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <Eye className="w-3.5 h-3.5" />
-                      {showPdfViewer ? 'ซ่อนตัวอย่าง PDF' : 'เปิดดู PDF ในหน้าเว็บ'}
+                      {isLoadingPdf ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+                          กำลังโหลด PDF...
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5" />
+                          {showPdfViewer ? 'ซ่อนตัวอย่าง PDF' : 'เปิดดู PDF ในหน้าเว็บ'}
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={handleDownloadPdf}
-                      className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      disabled={isLoadingPdf}
+                      className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <FileDown className="w-4 h-4" />
+                      {isLoadingPdf ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      ) : (
+                        <FileDown className="w-4 h-4" />
+                      )}
                       ดาวน์โหลด PDF
                     </button>
                   </div>
@@ -326,17 +403,24 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                         ปิดตัวอย่าง
                       </button>
                     </div>
-                    <iframe
-                      src={project.pdfFile.dataUrl}
-                      className="w-full h-96 rounded-lg bg-white"
-                      title="PDF Viewer"
-                    />
+                    {pdfDataUrl ? (
+                      <iframe
+                        src={pdfDataUrl}
+                        className="w-full h-96 rounded-lg bg-white"
+                        title="PDF Viewer"
+                      />
+                    ) : (
+                      <div className="py-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
+                        <span>กำลังดึงข้อมูลไฟล์เอกสาร PDF จากคลาวด์...</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
             ) : (
               <div className="py-4 text-center text-xs text-slate-500 bg-white rounded-xl border border-dashed border-rose-200">
-                ยังไม่ได้แนบไฟล์เอกสาร PDF โครงการ (สามารถแนบไฟล์ PDF ไม่เกิน 2 MB ได้ที่เมนูแก้ไขโครงการ)
+                ยังไม่ได้แนบไฟล์เอกสาร PDF โครงการ (สามารถแนบไฟล์ PDF ไม่เกิน 5 MB ได้ที่เมนูแก้ไขโครงการ)
               </div>
             )}
           </div>
@@ -447,9 +531,15 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-black/80">
+            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-black/80 relative">
+              {isLoadingPhoto && !fullPhotoUrl && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10 text-white gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-sky-400" />
+                  <span className="text-xs font-medium">กำลังโหลดรูปภาพความละเอียดสูงจากคลาวด์...</span>
+                </div>
+              )}
               <img
-                src={selectedFullPhoto.originalDataUrl}
+                src={fullPhotoUrl || selectedFullPhoto.thumbnailUrl || selectedFullPhoto.originalDataUrl}
                 alt={selectedFullPhoto.name}
                 className="max-h-[80vh] w-auto object-contain rounded-lg shadow-2xl"
               />

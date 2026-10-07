@@ -5,7 +5,7 @@
 
 import { ProjectPdfFile, ProjectPhoto } from '../types';
 
-export const MAX_PDF_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB (Supported via Chunked Cloud Storage)
 export const DEFAULT_CACHE_CONTROL = 'public, max-age=31536000';
 
 /**
@@ -24,15 +24,16 @@ export function formatFileSize(bytes: number): string {
 export function validateAndProcessPdf(file: File): Promise<ProjectPdfFile> {
   return new Promise((resolve, reject) => {
     // 1. File Type Check
-    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       return reject(new Error('รองรับเฉพาะไฟล์เอกสารรูปแบบ PDF เท่านั้น'));
     }
 
-    // 2. File Size Check (Max 2MB)
+    // 2. File Size Check (Max 5MB)
     if (file.size > MAX_PDF_SIZE_BYTES) {
       const currentMb = (file.size / (1024 * 1024)).toFixed(2);
       return reject(
-        new Error(`ไฟล์ PDF มีขนาด ${currentMb} MB ซึ่งเกินกำหนด (ไม่เกิน 2 MB) กรุณาบีบอัดไฟล์หรือเลือกไฟล์ใหม่`)
+        new Error(`ไฟล์ PDF มีขนาด ${currentMb} MB ซึ่งเกินกำหนด (ไม่เกิน 5 MB) กรุณาเลือกไฟล์ใหม่`)
       );
     }
 
@@ -63,7 +64,8 @@ export function compressCanvasImage(
   quality: number
 ): Promise<{ dataUrl: string; size: number; width: number; height: number }> {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) {
+    const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|svg)$/i.test(file.name);
+    if (!isImage) {
       return reject(new Error('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP)'));
     }
 

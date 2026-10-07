@@ -61,6 +61,28 @@
         "action": { "type": "string" },
         "timestamp": { "type": "string" }
       }
+    },
+    "projectFiles": {
+      "title": "Project Files",
+      "description": "Chunked binary documents for project PDF attachments",
+      "type": "object",
+      "properties": {
+        "fileId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "data": { "type": "string" },
+        "totalChunks": { "type": "number" },
+        "chunkIndex": { "type": "number" }
+      }
+    },
+    "projectPhotos": {
+      "title": "Project Photos",
+      "description": "Full-resolution WebP images for projects",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "originalDataUrl": { "type": "string" }
+      }
     }
   }
 }

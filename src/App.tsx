@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Project, Agency, StrategicIssue, KeyFlagshipProject } from './types';
 import { StorageService, initFirestoreListeners } from './services/storage';
+import { FileStorageService } from './services/fileStorage';
 import { Header } from './components/Header';
 import { LoginModal } from './components/LoginModal';
 import { DashboardView } from './components/DashboardView';
@@ -89,7 +90,10 @@ export default function App() {
         return p;
       });
 
-      await StorageService.saveProjects(updatedList);
+      const ok = await StorageService.saveProjects(updatedList);
+      if (!ok) {
+        throw new Error('ไม่สามารถบันทึกข้อมูลไปยังฐานข้อมูลคลาวด์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+      }
 
       if (currentUser) {
         StorageService.addAuditLog({
@@ -150,7 +154,10 @@ export default function App() {
         updatedAt: new Date().toISOString(),
       };
 
-      await StorageService.saveProjects([newProject, ...currentProjects]);
+      const ok = await StorageService.saveProjects([newProject, ...currentProjects]);
+      if (!ok) {
+        throw new Error('ไม่สามารถบันทึกข้อมูลไปยังฐานข้อมูลคลาวด์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+      }
 
       if (currentUser) {
         StorageService.addAuditLog({
@@ -175,6 +182,15 @@ export default function App() {
     const currentProjects = StorageService.getProjects();
     const updated = currentProjects.filter(p => p.id !== projectToDelete.id);
     await StorageService.saveProjects(updated);
+
+    // Clean up project files in background
+    if (projectToDelete.pdfFile?.fileId || (projectToDelete.photos && projectToDelete.photos.length > 0)) {
+      FileStorageService.deleteProjectFiles(
+        projectToDelete.id,
+        projectToDelete.pdfFile?.fileId,
+        projectToDelete.photos?.map(p => p.id)
+      ).catch(() => {});
+    }
 
     if (currentUser) {
       StorageService.addAuditLog({

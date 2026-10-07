@@ -8,6 +8,7 @@ import {
   INITIAL_AUDIT_LOGS
 } from '../data/initialData';
 import { db, doc, setDoc, getDocs, collection, onSnapshot } from '../lib/firebase';
+import { FileStorageService } from './fileStorage';
 
 const KEYS = {
   AGENCIES: 'system_agencies_v1',
@@ -174,20 +175,92 @@ export const StorageService = {
     return await syncCollectionToFirestore('users', cleaned);
   },
 
+  _inMemoryProjects: [] as Project[],
+
   getProjects(): Project[] {
     const list = getItem<Project[]>(KEYS.PROJECTS, []);
     // Ensure any legacy demo projects with 'prj-2568-00' do not pollute the view
+    let result = list;
     if (list.some(p => p.id.startsWith('prj-2568-00'))) {
-      const cleaned = list.filter(p => !p.id.startsWith('prj-2568-00'));
-      setItem(KEYS.PROJECTS, cleaned);
-      return cleaned;
+      result = list.filter(p => !p.id.startsWith('prj-2568-00'));
+      setItem(KEYS.PROJECTS, result);
     }
-    return list;
+    // Merge any active in-memory dataUrls for files
+    if (this._inMemoryProjects && this._inMemoryProjects.length > 0) {
+      const memMap = new Map<string, Project>(this._inMemoryProjects.map((p: Project) => [p.id, p]));
+      return result.map(p => {
+        const mem = memMap.get(p.id);
+        if (mem) {
+          return {
+            ...p,
+            pdfFile: p.pdfFile ? { ...p.pdfFile, dataUrl: mem.pdfFile?.dataUrl || p.pdfFile.dataUrl } : undefined,
+            photos: p.photos ? p.photos.map((ph, idx) => ({
+              ...ph,
+              originalDataUrl: mem.photos?.[idx]?.originalDataUrl || ph.originalDataUrl
+            })) : []
+          };
+        }
+        return p;
+      });
+    }
+    return result;
   },
   async saveProjects(projects: Project[]): Promise<boolean> {
-    const cleaned = cleanForFirestore(projects);
+    // 1. Process and save any heavy binary files (PDF and high-res photos) to FileStorageService
+    for (const project of projects) {
+      if (project.pdfFile && project.pdfFile.dataUrl) {
+        const fileId = await FileStorageService.savePdf(project.id, project.pdfFile);
+        project.pdfFile.fileId = fileId;
+      }
+      if (project.photos && project.photos.length > 0) {
+        await FileStorageService.savePhotos(project.id, project.photos);
+      }
+    }
+
+    // Keep active in-memory copy
+    this._inMemoryProjects = projects;
+
+    // 2. Prepare lightweight stripped copy for app_data/projects in Firestore and LocalStorage
+    // Stripping the heavy multi-megabyte dataUrl strings ensures Firestore 1 MiB document limit
+    // and LocalStorage 5 MB quota are never exceeded.
+    const lightweightProjects = projects.map(p => {
+      const copy = { ...p };
+      if (copy.pdfFile) {
+        copy.pdfFile = {
+          name: copy.pdfFile.name,
+          size: copy.pdfFile.size,
+          fileId: copy.pdfFile.fileId || `pdf_${copy.id}`,
+          cacheControl: copy.pdfFile.cacheControl || 'public, max-age=31536000',
+          uploadedAt: copy.pdfFile.uploadedAt || new Date().toISOString(),
+        };
+      }
+      if (copy.photos && copy.photos.length > 0) {
+        copy.photos = copy.photos.map(ph => ({
+          id: ph.id,
+          name: ph.name,
+          originalSize: ph.originalSize,
+          thumbnailUrl: ph.thumbnailUrl,
+          thumbnailSize: ph.thumbnailSize,
+          width: ph.width,
+          height: ph.height,
+          cacheControl: ph.cacheControl || 'public, max-age=31536000',
+          uploadedAt: ph.uploadedAt || new Date().toISOString(),
+        }));
+      }
+      return copy;
+    });
+
+    const cleaned = cleanForFirestore(lightweightProjects);
     setItem(KEYS.PROJECTS, cleaned);
     return await syncCollectionToFirestore('projects', cleaned);
+  },
+
+  async getPdfDataUrl(projectId: string, fileId?: string): Promise<string | null> {
+    return await FileStorageService.getPdfDataUrl(projectId, fileId);
+  },
+
+  async getPhotoDataUrl(photoId: string): Promise<string | null> {
+    return await FileStorageService.getPhotoOriginalDataUrl(photoId);
   },
 
   getAuditLogs(): AuditLogEntry[] {

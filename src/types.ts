@@ -52,7 +52,8 @@ export interface QuarterInfo {
 export interface ProjectPdfFile {
   name: string;
   size: number; // in bytes
-  dataUrl: string;
+  dataUrl?: string;
+  fileId?: string;
   cacheControl: string; // "public, max-age=31536000"
   uploadedAt: string;
 }
@@ -60,7 +61,7 @@ export interface ProjectPdfFile {
 export interface ProjectPhoto {
   id: string;
   name: string;
-  originalDataUrl: string; // WebP compressed <= 1080px, 80% quality
+  originalDataUrl?: string; // WebP compressed <= 1080px, 80% quality
   originalSize: number;
   thumbnailUrl: string; // WebP thumbnail <= 250px, 70% quality (~20-50 KB)
   thumbnailSize: number;
