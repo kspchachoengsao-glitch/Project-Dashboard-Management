@@ -103,6 +103,25 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         createdByName: projectToEdit.createdByName || currentUser.name || '',
         createdAt: projectToEdit.createdAt ? projectToEdit.createdAt.substring(0, 10) : new Date().toISOString().split('T')[0],
       });
+
+      // Preload thumbnails for existing photos if not already populated
+      if (projectToEdit.photos && projectToEdit.photos.length > 0) {
+        projectToEdit.photos.forEach(async (photo) => {
+          if (!photo.thumbnailUrl && !photo.originalDataUrl) {
+            try {
+              const thumb = await StorageService.getPhotoThumbnailUrl(photo.id);
+              if (thumb) {
+                setFormData(prev => ({
+                  ...prev,
+                  photos: prev.photos?.map(p => p.id === photo.id ? { ...p, thumbnailUrl: thumb } : p)
+                }));
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+        });
+      }
     } else {
       // Default auto code based on selected/current fiscal year
       const defaultFiscalYear = suggestedFiscalYears[0] || currentBuddhistYear;

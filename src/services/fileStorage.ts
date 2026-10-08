@@ -31,23 +31,36 @@ function openIdb(): Promise<IDBDatabase> {
       return reject(new Error('IndexedDB not supported in this environment'));
     }
 
-    const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+    const timer = setTimeout(() => {
+      reject(new Error('IndexedDB open timed out, using memory cache fallback'));
+    }, 1500);
 
-    request.onupgradeneeded = (event) => {
-      const dbInstance = (event.target as IDBOpenDBRequest).result;
-      if (!dbInstance.objectStoreNames.contains(STORE_FILES)) {
-        dbInstance.createObjectStore(STORE_FILES, { keyPath: 'fileId' });
-      }
-      if (!dbInstance.objectStoreNames.contains(STORE_PHOTOS)) {
-        dbInstance.createObjectStore(STORE_PHOTOS, { keyPath: 'photoId' });
-      }
-    };
+    try {
+      const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => {
-      console.warn('Could not open IndexedDB, using memory cache fallback:', request.error);
-      reject(request.error);
-    };
+      request.onupgradeneeded = (event) => {
+        const dbInstance = (event.target as IDBOpenDBRequest).result;
+        if (!dbInstance.objectStoreNames.contains(STORE_FILES)) {
+          dbInstance.createObjectStore(STORE_FILES, { keyPath: 'fileId' });
+        }
+        if (!dbInstance.objectStoreNames.contains(STORE_PHOTOS)) {
+          dbInstance.createObjectStore(STORE_PHOTOS, { keyPath: 'photoId' });
+        }
+      };
+
+      request.onsuccess = () => {
+        clearTimeout(timer);
+        resolve(request.result);
+      };
+      request.onerror = () => {
+        clearTimeout(timer);
+        console.warn('Could not open IndexedDB, using memory cache fallback:', request.error);
+        reject(request.error);
+      };
+    } catch (err) {
+      clearTimeout(timer);
+      reject(err);
+    }
   });
 
   return idbPromise;
@@ -97,14 +110,15 @@ async function idbGetFile(fileId: string): Promise<string | null> {
 }
 
 // IndexedDB Helper: Put Photo
-async function idbPutPhoto(photoId: string, originalDataUrl: string): Promise<void> {
-  memoryPhotosCache.set(photoId, originalDataUrl);
+async function idbPutPhoto(photoId: string, originalDataUrl?: string, thumbnailUrl?: string): Promise<void> {
+  if (originalDataUrl) memoryPhotosCache.set(photoId, originalDataUrl);
+  if (thumbnailUrl) memoryPhotosCache.set(`${photoId}_thumb`, thumbnailUrl);
   try {
     const dbInst = await openIdb();
     return new Promise((resolve, reject) => {
       const tx = dbInst.transaction(STORE_PHOTOS, 'readwrite');
       const store = tx.objectStore(STORE_PHOTOS);
-      const req = store.put({ photoId, originalDataUrl, updatedAt: Date.now() });
+      const req = store.put({ photoId, originalDataUrl, thumbnailUrl, updatedAt: Date.now() });
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
@@ -113,7 +127,7 @@ async function idbPutPhoto(photoId: string, originalDataUrl: string): Promise<vo
   }
 }
 
-// IndexedDB Helper: Get Photo
+// IndexedDB Helper: Get Photo Original
 async function idbGetPhoto(photoId: string): Promise<string | null> {
   if (memoryPhotosCache.has(photoId)) {
     return memoryPhotosCache.get(photoId) || null;
@@ -127,6 +141,34 @@ async function idbGetPhoto(photoId: string): Promise<string | null> {
       req.onsuccess = () => {
         if (req.result?.originalDataUrl) {
           memoryPhotosCache.set(photoId, req.result.originalDataUrl);
+          resolve(req.result.originalDataUrl);
+        } else {
+          resolve(null);
+        }
+      };
+      req.onerror = () => resolve(null);
+    });
+  } catch (err) {
+    return null;
+  }
+}
+
+// IndexedDB Helper: Get Photo Thumbnail
+async function idbGetPhotoThumbnail(photoId: string): Promise<string | null> {
+  if (memoryPhotosCache.has(`${photoId}_thumb`)) {
+    return memoryPhotosCache.get(`${photoId}_thumb`) || null;
+  }
+  try {
+    const dbInst = await openIdb();
+    return new Promise((resolve) => {
+      const tx = dbInst.transaction(STORE_PHOTOS, 'readonly');
+      const store = tx.objectStore(STORE_PHOTOS);
+      const req = store.get(photoId);
+      req.onsuccess = () => {
+        if (req.result?.thumbnailUrl) {
+          memoryPhotosCache.set(`${photoId}_thumb`, req.result.thumbnailUrl);
+          resolve(req.result.thumbnailUrl);
+        } else if (req.result?.originalDataUrl) {
           resolve(req.result.originalDataUrl);
         } else {
           resolve(null);
@@ -156,6 +198,7 @@ export const FileStorageService = {
 
     // 1. Cache locally in IndexedDB
     await idbPutFile(fileId, dataUrl, pdfFile.name);
+    await idbPutFile(`pdf_${projectId}`, dataUrl, pdfFile.name);
 
     // 2. Upload to Firestore
     try {
@@ -221,13 +264,21 @@ export const FileStorageService = {
     const targetFileId = fileId || `pdf_${projectId}`;
 
     // 1. Check local IndexedDB
-    const local = await idbGetFile(targetFileId);
+    let local = await idbGetFile(targetFileId);
+    if (!local && fileId && fileId !== `pdf_${projectId}`) {
+      local = await idbGetFile(`pdf_${projectId}`);
+    }
     if (local) return local;
 
     // 2. Check Firestore
     try {
-      const docRef = doc(db, 'project_files', targetFileId);
-      const snap = await getDoc(docRef);
+      let docRef = doc(db, 'project_files', targetFileId);
+      let snap = await getDoc(docRef);
+      if (!snap.exists() && fileId && fileId !== `pdf_${projectId}`) {
+        docRef = doc(db, 'project_files', `pdf_${projectId}`);
+        snap = await getDoc(docRef);
+      }
+
       if (!snap.exists()) {
         return null;
       }
@@ -242,7 +293,7 @@ export const FileStorageService = {
         const chunkPromises: Promise<string>[] = [];
 
         for (let i = 0; i < totalChunks; i++) {
-          const chunkRef = doc(db, 'project_files', `${targetFileId}_chunk_${i}`);
+          const chunkRef = doc(db, 'project_files', `${docRef.id}_chunk_${i}`);
           chunkPromises.push(
             getDoc(chunkRef).then((cSnap) => (cSnap.exists() ? cSnap.data().data || '' : ''))
           );
@@ -255,6 +306,7 @@ export const FileStorageService = {
       if (fullDataUrl) {
         // Cache to local IndexedDB for future fast loads
         await idbPutFile(targetFileId, fullDataUrl, data.name);
+        await idbPutFile(`pdf_${projectId}`, fullDataUrl, data.name);
       }
 
       return fullDataUrl || null;
@@ -267,30 +319,68 @@ export const FileStorageService = {
   /**
    * Saves high-resolution photos:
    * 1. Caches in local IndexedDB
-   * 2. Saves full image to Firestore 'project_photos' collection
+   * 2. Saves full image and thumbnail to Firestore 'project_photos' collection
    */
   async savePhotos(projectId: string, photos: ProjectPhoto[]): Promise<void> {
     if (!photos || photos.length === 0) return;
 
     for (const photo of photos) {
-      if (!photo.originalDataUrl) continue;
+      if (!photo.originalDataUrl && !photo.thumbnailUrl) continue;
 
-      // 1. Cache in IndexedDB
-      await idbPutPhoto(photo.id, photo.originalDataUrl);
+      // 1. Cache in IndexedDB / Memory
+      await idbPutPhoto(photo.id, photo.originalDataUrl, photo.thumbnailUrl);
 
-      // 2. Sync to Firestore
+      // 2. Sync to Firestore (supports chunking if > CHUNK_SIZE_CHARS)
       try {
-        const photoRef = doc(db, 'project_photos', photo.id);
-        await setDoc(photoRef, {
-          id: photo.id,
-          projectId,
-          name: photo.name,
-          originalDataUrl: photo.originalDataUrl,
-          originalSize: photo.originalSize,
-          width: photo.width,
-          height: photo.height,
-          updatedAt: new Date().toISOString(),
-        });
+        const origUrl = photo.originalDataUrl || '';
+        const thumbUrl = photo.thumbnailUrl || '';
+
+        if (origUrl.length <= CHUNK_SIZE_CHARS) {
+          const photoRef = doc(db, 'project_photos', photo.id);
+          await setDoc(photoRef, {
+            id: photo.id,
+            projectId,
+            name: photo.name,
+            originalDataUrl: origUrl,
+            thumbnailUrl: thumbUrl,
+            originalSize: photo.originalSize || 0,
+            thumbnailSize: photo.thumbnailSize || 0,
+            width: photo.width || 0,
+            height: photo.height || 0,
+            isChunked: false,
+            totalChunks: 1,
+            updatedAt: new Date().toISOString(),
+          });
+        } else {
+          // Chunked photo upload
+          const totalChunks = Math.ceil(origUrl.length / CHUNK_SIZE_CHARS);
+          const manifestRef = doc(db, 'project_photos', photo.id);
+          await setDoc(manifestRef, {
+            id: photo.id,
+            projectId,
+            name: photo.name,
+            thumbnailUrl: thumbUrl,
+            originalSize: photo.originalSize || 0,
+            thumbnailSize: photo.thumbnailSize || 0,
+            width: photo.width || 0,
+            height: photo.height || 0,
+            isChunked: true,
+            totalChunks,
+            updatedAt: new Date().toISOString(),
+          });
+
+          for (let i = 0; i < totalChunks; i++) {
+            const chunkStr = origUrl.substring(i * CHUNK_SIZE_CHARS, (i + 1) * CHUNK_SIZE_CHARS);
+            const chunkRef = doc(db, 'project_photos', `${photo.id}_chunk_${i}`);
+            await setDoc(chunkRef, {
+              photoId: photo.id,
+              chunkIndex: i,
+              totalChunks,
+              data: chunkStr,
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        }
       } catch (err) {
         console.error('Failed to sync photo to Firestore cloud, saved locally:', err);
       }
@@ -300,7 +390,7 @@ export const FileStorageService = {
   /**
    * Retrieves high-resolution photo DataURL:
    * 1. Checks local IndexedDB / memory
-   * 2. If not found locally, fetches from Firestore 'project_photos'
+   * 2. If not found locally, fetches and reconstructs from Firestore 'project_photos'
    */
   async getPhotoOriginalDataUrl(photoId: string): Promise<string | null> {
     // 1. Check local IndexedDB
@@ -311,13 +401,62 @@ export const FileStorageService = {
     try {
       const photoRef = doc(db, 'project_photos', photoId);
       const snap = await getDoc(photoRef);
-      if (snap.exists() && snap.data().originalDataUrl) {
-        const fullUrl = snap.data().originalDataUrl;
-        await idbPutPhoto(photoId, fullUrl);
-        return fullUrl;
+      if (snap.exists()) {
+        const data = snap.data();
+        let fullUrl = '';
+
+        if (!data.isChunked) {
+          fullUrl = data.originalDataUrl || '';
+        } else {
+          const totalChunks = data.totalChunks || 1;
+          const chunkPromises: Promise<string>[] = [];
+
+          for (let i = 0; i < totalChunks; i++) {
+            const chunkRef = doc(db, 'project_photos', `${photoId}_chunk_${i}`);
+            chunkPromises.push(
+              getDoc(chunkRef).then((cSnap) => (cSnap.exists() ? cSnap.data().data || '' : ''))
+            );
+          }
+
+          const chunkResults = await Promise.all(chunkPromises);
+          fullUrl = chunkResults.join('');
+        }
+
+        if (fullUrl) {
+          await idbPutPhoto(photoId, fullUrl, data.thumbnailUrl);
+          return fullUrl;
+        }
       }
     } catch (err) {
       console.error('Error fetching photo from Firestore:', err);
+    }
+
+    return null;
+  },
+
+  /**
+   * Retrieves thumbnail photo DataURL:
+   * 1. Checks local IndexedDB / memory
+   * 2. If not found locally, fetches from Firestore 'project_photos'
+   */
+  async getPhotoThumbnailUrl(photoId: string): Promise<string | null> {
+    // 1. Check local IndexedDB
+    const local = await idbGetPhotoThumbnail(photoId);
+    if (local) return local;
+
+    // 2. Check Firestore
+    try {
+      const photoRef = doc(db, 'project_photos', photoId);
+      const snap = await getDoc(photoRef);
+      if (snap.exists()) {
+        const thumbUrl = snap.data().thumbnailUrl || snap.data().originalDataUrl || null;
+        if (thumbUrl) {
+          await idbPutPhoto(photoId, snap.data().originalDataUrl, thumbUrl);
+          return thumbUrl;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching photo thumbnail from Firestore:', err);
     }
 
     return null;

@@ -118,9 +118,18 @@ export function initFirestoreListeners(onDataUpdated?: () => void) {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (Array.isArray(data?.items)) {
-            setItem(key, data.items);
-            updateSyncStatus('connected', 'เชื่อมต่อฐานข้อมูลคลาวด์เรียบร้อย (บันทึกถาวร)');
-            if (onDataUpdated) onDataUpdated();
+            if (data.items.length > 0) {
+              setItem(key, data.items);
+              updateSyncStatus('connected', 'เชื่อมต่อฐานข้อมูลคลาวด์เรียบร้อย (บันทึกถาวร)');
+              if (onDataUpdated) onDataUpdated();
+            } else {
+              // If cloud doc is empty array, check if client has existing local items.
+              // If so, protect client local items and push them to cloud!
+              const currentLocal = getItem<any[]>(key, fallback);
+              if (Array.isArray(currentLocal) && currentLocal.length > 0) {
+                syncCollectionToFirestore(col, currentLocal);
+              }
+            }
           }
         } else {
           // Document doesn't exist yet on Firestore: seed clean initial data
@@ -196,6 +205,7 @@ export const StorageService = {
             pdfFile: p.pdfFile ? { ...p.pdfFile, dataUrl: mem.pdfFile?.dataUrl || p.pdfFile.dataUrl } : undefined,
             photos: p.photos ? p.photos.map((ph, idx) => ({
               ...ph,
+              thumbnailUrl: mem.photos?.[idx]?.thumbnailUrl || ph.thumbnailUrl,
               originalDataUrl: mem.photos?.[idx]?.originalDataUrl || ph.originalDataUrl
             })) : []
           };
@@ -208,12 +218,16 @@ export const StorageService = {
   async saveProjects(projects: Project[]): Promise<boolean> {
     // 1. Process and save any heavy binary files (PDF and high-res photos) to FileStorageService
     for (const project of projects) {
-      if (project.pdfFile && project.pdfFile.dataUrl) {
-        const fileId = await FileStorageService.savePdf(project.id, project.pdfFile);
-        project.pdfFile.fileId = fileId;
-      }
-      if (project.photos && project.photos.length > 0) {
-        await FileStorageService.savePhotos(project.id, project.photos);
+      try {
+        if (project.pdfFile && project.pdfFile.dataUrl) {
+          const fileId = await FileStorageService.savePdf(project.id, project.pdfFile);
+          project.pdfFile.fileId = fileId;
+        }
+        if (project.photos && project.photos.length > 0) {
+          await FileStorageService.savePhotos(project.id, project.photos);
+        }
+      } catch (err) {
+        console.warn('Error saving files for project:', project.id, err);
       }
     }
 
@@ -221,8 +235,8 @@ export const StorageService = {
     this._inMemoryProjects = projects;
 
     // 2. Prepare lightweight stripped copy for app_data/projects in Firestore and LocalStorage
-    // Stripping the heavy multi-megabyte dataUrl strings ensures Firestore 1 MiB document limit
-    // and LocalStorage 5 MB quota are never exceeded.
+    // Stripping the heavy multi-megabyte dataUrl and thumbnailUrl strings ensures Firestore 1 MiB document limit
+    // and LocalStorage 5 MB quota are never exceeded. Full photos & thumbnails are safely housed in project_photos.
     const lightweightProjects = projects.map(p => {
       const copy = { ...p };
       if (copy.pdfFile) {
@@ -239,7 +253,6 @@ export const StorageService = {
           id: ph.id,
           name: ph.name,
           originalSize: ph.originalSize,
-          thumbnailUrl: ph.thumbnailUrl,
           thumbnailSize: ph.thumbnailSize,
           width: ph.width,
           height: ph.height,
@@ -252,7 +265,33 @@ export const StorageService = {
 
     const cleaned = cleanForFirestore(lightweightProjects);
     setItem(KEYS.PROJECTS, cleaned);
-    return await syncCollectionToFirestore('projects', cleaned);
+    await syncCollectionToFirestore('projects', cleaned);
+
+    // Keep an automated disaster-recovery backup in Firestore whenever >= 1 projects are saved
+    if (cleaned.length > 0) {
+      syncCollectionToFirestore('projects_backup', cleaned).catch(err => {
+        console.warn('Background backup write error:', err);
+      });
+    }
+
+    return true;
+  },
+
+  async restoreProjectsFromBackup(): Promise<Project[] | null> {
+    try {
+      const backupRef = doc(db, 'app_data', 'projects_backup');
+      const snap = await getDoc(backupRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data?.items) && data.items.length > 0) {
+          await this.saveProjects(data.items);
+          return data.items;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to restore projects from backup:', err);
+    }
+    return null;
   },
 
   async getPdfDataUrl(projectId: string, fileId?: string): Promise<string | null> {
@@ -261,6 +300,10 @@ export const StorageService = {
 
   async getPhotoDataUrl(photoId: string): Promise<string | null> {
     return await FileStorageService.getPhotoOriginalDataUrl(photoId);
+  },
+
+  async getPhotoThumbnailUrl(photoId: string): Promise<string | null> {
+    return await FileStorageService.getPhotoThumbnailUrl(photoId);
   },
 
   getAuditLogs(): AuditLogEntry[] {

@@ -137,11 +137,11 @@ export function compressCanvasImage(
  * 3. Tags with Cache-Control header metadata
  */
 export async function processPhotoWithThumbnail(file: File): Promise<ProjectPhoto> {
-  // Step A: Original WebP Compression (Max 1080px width/height, 80% quality)
-  const original = await compressCanvasImage(file, 1080, 0.80);
+  // Step A: Original WebP Compression (Max 960px width/height, 75% quality for crisp display ~ 120-200 KB)
+  const original = await compressCanvasImage(file, 960, 0.75);
 
-  // Step B: Thumbnail Generation (Max 250px width/height, 70% quality ~ 20-50 KB)
-  const thumbnail = await compressCanvasImage(file, 250, 0.70);
+  // Step B: Thumbnail Generation (Max 220px width/height, 65% quality ~ 15-25 KB)
+  const thumbnail = await compressCanvasImage(file, 220, 0.65);
 
   const photoId = `photo-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 

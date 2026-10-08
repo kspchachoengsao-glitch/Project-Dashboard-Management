@@ -61,9 +61,9 @@ export interface ProjectPdfFile {
 export interface ProjectPhoto {
   id: string;
   name: string;
-  originalDataUrl?: string; // WebP compressed <= 1080px, 80% quality
+  originalDataUrl?: string; // WebP compressed <= 960px
   originalSize: number;
-  thumbnailUrl: string; // WebP thumbnail <= 250px, 70% quality (~20-50 KB)
+  thumbnailUrl?: string; // WebP thumbnail <= 220px (~15-25 KB)
   thumbnailSize: number;
   width: number;
   height: number;

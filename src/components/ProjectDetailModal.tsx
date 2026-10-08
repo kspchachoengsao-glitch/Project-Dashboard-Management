@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, ProjectPhoto } from '../types';
-import { STATUS_THAI_MAP, printPDFReport } from '../utils/exportUtils';
+import { STATUS_THAI_MAP, printPDFReport, printSingleProjectReport } from '../utils/exportUtils';
 import { formatFileSize } from '../utils/fileProcessingUtils';
 import { StorageService } from '../services/storage';
 import {
@@ -45,11 +45,29 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
   const [fullPhotoUrl, setFullPhotoUrl] = useState<string | null>(null);
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
 
+  const [photoThumbnails, setPhotoThumbnails] = useState<Record<string, string>>({});
+
   useEffect(() => {
     setPdfDataUrl(project?.pdfFile?.dataUrl || null);
     setShowPdfViewer(false);
     setSelectedFullPhoto(null);
     setFullPhotoUrl(null);
+
+    // Resolve any photos without active dataUrl/thumbnailUrl in memory
+    if (project?.photos && project.photos.length > 0) {
+      project.photos.forEach(async (photo) => {
+        if (!photo.thumbnailUrl && !photo.originalDataUrl) {
+          try {
+            const thumb = await StorageService.getPhotoThumbnailUrl(photo.id);
+            if (thumb) {
+              setPhotoThumbnails(prev => ({ ...prev, [photo.id]: thumb }));
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+      });
+    }
   }, [project]);
 
   if (!project) return null;
@@ -130,10 +148,21 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => printPDFReport('single-project-print-area')}
-              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+              onClick={async () => {
+                // Enrich project photos with loaded thumbnails for high-fidelity print output
+                const printable = {
+                  ...project,
+                  photos: (project.photos || []).map(ph => ({
+                    ...ph,
+                    thumbnailUrl: photoThumbnails[ph.id] || ph.thumbnailUrl || ph.originalDataUrl
+                  }))
+                };
+                await printSingleProjectReport(printable);
+              }}
+              className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              title="พิมพ์รายงานสรุปโครงการในรูปแบบ A4 แนวตั้ง (Portrait)"
             >
-              <Printer className="w-4 h-4" /> พิมพ์สรุป PDF
+              <Printer className="w-4 h-4" /> พิมพ์สรุป PDF (แนวตั้ง)
             </button>
             <button
               onClick={onClose}
@@ -297,7 +326,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                   >
                     <div className="relative aspect-4/3 overflow-hidden bg-slate-100">
                       <img
-                        src={photo.thumbnailUrl || photo.originalDataUrl}
+                        src={photoThumbnails[photo.id] || photo.thumbnailUrl || photo.originalDataUrl}
                         alt={`รูปถ่าย ${idx + 1}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"

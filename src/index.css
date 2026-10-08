@@ -1,1 +1,41 @@
 @import "tailwindcss";
+
+@media print {
+  @page {
+    size: portrait !important;
+    size: A4 portrait !important;
+    margin: 10mm 12mm !important;
+  }
+
+  html, body {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+  }
+
+  /* Hide app header, navigation, backdrop overlays, and buttons */
+  header, nav, button, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Isolate printable areas during direct browser print */
+  #single-project-print-area,
+  #printable-table-area,
+  #printable-report-area,
+  #analytics-printable-area {
+    width: 100% !important;
+    max-width: 186mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
